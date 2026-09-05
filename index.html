@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Frente da Panfletagem — Rio Grande do Sul</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4e9de;--paper-dim:#c9b9a6;
+    --oxblood:#1a0d0c;--oxblood-2:#26130f;--panel:#22110f;--panel-edge:#4a1512;
+    --red:#d61f1f;--red-bright:#ff4b3e;--red-deep:#8f1010;
+    --wheat:#e3b23c;--wheat-dim:#a67e2a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--oxblood);color:var(--paper);overflow:hidden;-webkit-tap-highlight-color:transparent}
+
+  header{position:fixed;top:0;left:0;right:0;z-index:1200;display:flex;align-items:center;gap:12px;
+    padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    background:linear-gradient(180deg,rgba(20,8,7,.97),rgba(20,8,7,.82) 70%,rgba(20,8,7,0));pointer-events:none}
+  header .star{pointer-events:auto;width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 0 2px var(--wheat),0 4px 14px rgba(0,0,0,.5)}
+  header .titles{pointer-events:auto;line-height:1}
+  header h1{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;letter-spacing:.5px;margin:0;color:var(--paper);text-transform:uppercase}
+  header h1 b{color:var(--red-bright)}
+  header .sub{font-size:11px;color:var(--paper-dim);margin-top:3px;letter-spacing:.3px}
+
+  #map{position:absolute;inset:0;background:#0e0605}
+  .leaflet-container{background:#0e0605;font-family:inherit}
+  .leaflet-control-attribution{background:rgba(20,8,7,.7)!important;color:#8a7a6c!important;font-size:9px}
+  .leaflet-control-attribution a{color:#a9927f!important}
+  .leaflet-bar a{background:var(--panel);color:var(--paper);border-color:#3a1210!important}
+  .leaflet-bar a:hover{background:#301715}
+
+  .pin{transition:transform .08s ease}
+  .pin:active{transform:scale(.9)}
+  .pin .dot{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Oswald",sans-serif;font-weight:700;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.55)}
+  .pin.done .dot{background:radial-gradient(circle at 35% 30%,#ff5a4d,var(--red) 70%);border:2px solid #ffb3ab}
+  .pin.both .dot{box-shadow:0 0 0 3px var(--wheat),0 2px 8px rgba(0,0,0,.55)}
+  .pin.sched .dot{background:rgba(227,178,60,.12);border:2px dashed var(--wheat);color:var(--wheat);font-size:14px}
+
+  .panel{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:230px;max-width:calc(100vw - 24px);
+    background:linear-gradient(180deg,var(--panel),var(--oxblood-2));border:1px solid var(--panel-edge);border-left:4px solid var(--red);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:12px}
+  .panel h2{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--wheat);margin:0 0 9px;font-weight:600}
+  .seg{display:flex;background:#160a09;border:1px solid #3a1210;border-radius:8px;overflow:hidden;margin-bottom:10px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--paper-dim);font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.4px;padding:8px 4px;cursor:pointer}
+  .seg button.active{background:var(--red);color:#fff}
+  .stat{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--paper-dim)}
+  .stat b{font-family:"Oswald",sans-serif;font-size:15px;color:var(--paper)}
+  .stat.n-done b{color:var(--red-bright)}
+  .stat.n-sched b{color:var(--wheat)}
+  .toggle-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--paper-dim)}
+  .switch{position:relative;width:38px;height:22px;flex:0 0 38px}
+  .switch input{opacity:0;width:0;height:0}
+  .switch span{position:absolute;inset:0;background:#3a1210;border-radius:22px;transition:.2s;cursor:pointer}
+  .switch span:before{content:"";position:absolute;height:16px;width:16px;left:3px;top:3px;background:#c9b9a6;border-radius:50%;transition:.2s}
+  .switch input:checked + span{background:var(--red)}
+  .switch input:checked + span:before{transform:translateX(16px);background:#fff}
+  .legend{margin-top:11px;border-top:1px solid #3a1210;padding-top:9px}
+  .legend div{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--paper-dim);margin:5px 0}
+  .lg{width:14px;height:14px;border-radius:50%;flex:0 0 14px}
+  .lg.done{background:var(--red);border:1px solid #ffb3ab}
+  .lg.sched{background:rgba(227,178,60,.15);border:2px dashed var(--wheat)}
+  .lg.hot{background:radial-gradient(circle,#ff4b3e,#8f1010)}
+
+  .fab{position:fixed;z-index:1100;right:14px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:60px;height:60px;border-radius:50%;border:0;cursor:pointer;background:var(--red);color:#fff;font-size:34px;font-weight:300;line-height:1;box-shadow:0 0 0 3px var(--wheat),0 8px 22px rgba(0,0,0,.55)}
+  .fab:active{transform:scale(.94)}
+  .fab.armed{background:var(--wheat);color:#1a0d0c;box-shadow:0 0 0 3px var(--red),0 8px 22px rgba(0,0,0,.55)}
+  .locate{position:fixed;z-index:1100;right:16px;bottom:calc(env(safe-area-inset-bottom) + 84px);width:46px;height:46px;border-radius:50%;border:1px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:20px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+  .locate:active{transform:scale(.94)}
+
+  .hint{position:fixed;z-index:1100;left:50%;top:calc(env(safe-area-inset-top) + 66px);transform:translateX(-50%);white-space:nowrap;background:var(--wheat);color:#1a0d0c;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:8px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.5);display:none}
+
+  .scrim{position:fixed;inset:0;z-index:1500;background:rgba(8,3,3,.6);display:none;backdrop-filter:blur(2px)}
+  .sheet{position:fixed;z-index:1600;left:0;right:0;bottom:0;background:linear-gradient(180deg,var(--panel),var(--oxblood));border-top:4px solid var(--red);border-radius:16px 16px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.6);padding:14px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(110%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:86vh;overflow:auto}
+  .sheet.open{transform:translateY(0)}
+  .grab{width:44px;height:4px;background:#5a2a26;border-radius:4px;margin:2px auto 12px}
+  .sheet h3{font-family:"Oswald",sans-serif;font-weight:700;font-size:20px;margin:0 0 3px;text-transform:uppercase;letter-spacing:.5px}
+  .sheet .coord{font-size:11px;color:var(--paper-dim);margin-bottom:14px}
+  label.fld{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--wheat);margin:14px 0 6px;font-family:"Oswald",sans-serif;font-weight:600}
+  input[type=text],input[type=date]{width:100%;background:#160a09;border:1px solid #3a1210;border-radius:9px;color:var(--paper);font-size:16px;padding:12px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--red)}
+  .typesel{display:flex;gap:8px}
+  .typesel button{flex:1;padding:14px 8px;border-radius:10px;border:1px solid #3a1210;background:#160a09;color:var(--paper-dim);font-family:"Oswald",sans-serif;font-weight:600;font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .typesel button .em{font-size:20px}
+  .typesel button[data-sel="panfletada"].active{background:var(--red);border-color:#ffb3ab;color:#fff}
+  .typesel button[data-sel="agendada"].active{background:rgba(227,178,60,.15);border-color:var(--wheat);color:var(--wheat)}
+  .actions{display:flex;gap:10px;margin-top:20px}
+  .btn{flex:1;padding:14px;border-radius:10px;border:0;cursor:pointer;font-family:"Oswald",sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;text-transform:uppercase}
+  .btn.primary{background:var(--red);color:#fff}
+  .btn.primary:active{background:var(--red-deep)}
+  .btn.ghost{background:transparent;color:var(--paper-dim);border:1px solid #3a1210}
+  .btn.danger{background:transparent;color:var(--red-bright);border:1px solid var(--red-deep)}
+
+  .evlist{margin:6px 0 4px;border-top:1px solid #3a1210}
+  .ev{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #2a1210}
+  .ev .tag{font-family:"Oswald",sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:4px 9px;border-radius:20px;flex:0 0 auto}
+  .ev .tag.panfletada{background:var(--red);color:#fff}
+  .ev .tag.agendada{background:rgba(227,178,60,.16);color:var(--wheat);border:1px solid var(--wheat-dim)}
+  .ev .d{flex:1;font-size:14px}
+  .ev .d small{display:block;color:var(--paper-dim);font-size:11px;margin-top:2px}
+  .ev .d small.overdue{color:var(--red-bright)}
+  .ev .x{background:transparent;border:0;color:#7a5a54;font-size:20px;cursor:pointer;padding:4px 8px}
+  .ev .x:active{color:var(--red-bright)}
+  .addbtn{width:100%;margin-top:12px;padding:13px;border-radius:10px;cursor:pointer;background:#160a09;border:1px dashed var(--red-deep);color:var(--red-bright);font-family:"Oswald",sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase}
+  .detmeta{display:flex;gap:16px;margin:2px 0 12px;font-size:12px;color:var(--paper-dim)}
+  .detmeta b{color:var(--paper);font-family:"Oswald",sans-serif;font-size:15px}
+
+  .toast{position:fixed;z-index:2000;left:50%;bottom:calc(env(safe-area-inset-bottom) + 90px);transform:translateX(-50%) translateY(20px);opacity:0;transition:.25s;background:#160a09;border:1px solid var(--panel-edge);border-left:4px solid var(--red);color:var(--paper);font-size:13px;padding:11px 16px;border-radius:9px;max-width:88vw;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  #loading{position:fixed;inset:0;z-index:3000;background:var(--oxblood);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  #loading .star{width:60px;height:60px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 0 0 3px var(--wheat);animation:pulse 1.1s ease-in-out infinite}
+  #loading p{font-family:"Oswald",sans-serif;letter-spacing:1px;color:var(--paper-dim);font-size:13px;text-transform:uppercase}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+  .banner{position:fixed;z-index:1400;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 62px);background:#3a1210;border:1px solid var(--red-deep);color:#f0d9d9;border-radius:9px;padding:10px 12px;font-size:12px;display:none}
+  .banner b{color:#fff}
+
+  @media (min-width:760px){
+    header h1{font-size:22px}header .sub{font-size:12px}
+    .panel{width:250px}
+    .sheet{left:auto;right:24px;bottom:24px;width:420px;border-radius:16px;border-top:0;border-left:4px solid var(--red);transform:translateX(130%)}
+    .sheet.open{transform:translateX(0)}
+    .grab{display:none}
+    .fab{width:64px;height:64px}
+  }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="star">&#9773;</div><p>Carregando a frente&hellip;</p></div>
+
+<header>
+  <div class="star">&#9773;</div>
+  <div class="titles">
+    <h1>Frente da <b>Panfletagem</b></h1>
+    <div class="sub">Manifesto Comunista &middot; Rio Grande do Sul &middot; dados coletivos</div>
+  </div>
+</header>
+
+<div id="map"></div>
+
+<div class="hint" id="hint">Toque no mapa na rua a marcar</div>
+<div class="banner" id="banner"></div>
+
+<div class="panel" id="panel">
+  <h2>Camadas</h2>
+  <div class="seg" id="filter">
+    <button data-f="todas" class="active">Todas</button>
+    <button data-f="panfletada">Feitas</button>
+    <button data-f="agendada">Agendadas</button>
+  </div>
+  <div class="stat n-done"><span>Ruas panfletadas</span><b id="cDone">0</b></div>
+  <div class="stat"><span>Total de panfletagens</span><b id="cTotal">0</b></div>
+  <div class="stat n-sched"><span>Agendadas</span><b id="cSched">0</b></div>
+  <div class="toggle-row">
+    <label class="switch"><input type="checkbox" id="heatToggle"><span></span></label>
+    <span>Mapa de calor (onde mais panfletei)</span>
+  </div>
+  <div class="legend">
+    <div><span class="lg done"></span> Panfletada &mdash; maior = mais vezes</div>
+    <div><span class="lg sched"></span> Agendada (planejada)</div>
+    <div><span class="lg hot"></span> Concentração de panfletagem</div>
+  </div>
+</div>
+
+<button class="locate" id="locate" title="Minha localização">&#9678;</button>
+<button class="fab" id="fab" aria-label="Adicionar rua">+</button>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-heat/0.2.0/leaflet-heat.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- config / backend ---------- */
+  var CFG = window.PANFLETO_CONFIG || {};
+  var ONLINE = !!(CFG.url && CFG.key);
+  var API = ONLINE ? CFG.url.replace(/\/+$/,"") + "/rest/v1/panfletagens" : null;
+  function H(extra){
+    return Object.assign({ "apikey":CFG.key, "Authorization":"Bearer "+CFG.key, "Content-Type":"application/json" }, extra||{});
+  }
+  function enc(s){ return encodeURIComponent(s); }
+
+  var store;
+  if(ONLINE){
+    store = {
+      selectAll: async function(){ var r=await fetch(API+"?select=*&order=created_at.asc",{headers:H()}); if(!r.ok) throw new Error(r.status); return r.json(); },
+      insert: async function(row){ var r=await fetch(API,{method:"POST",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(row)}); if(!r.ok) throw new Error(r.status); },
+      updateById: async function(id,patch){ var r=await fetch(API+"?id=eq."+enc(id),{method:"PATCH",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(patch)}); if(!r.ok) throw new Error(r.status); },
+      updateByPonto: async function(pid,patch){ var r=await fetch(API+"?ponto_id=eq."+enc(pid),{method:"PATCH",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(patch)}); if(!r.ok) throw new Error(r.status); },
+      deleteById: async function(id){ var r=await fetch(API+"?id=eq."+enc(id),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); },
+      deletePonto: async function(pid){ var r=await fetch(API+"?ponto_id=eq."+enc(pid),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); }
+    };
+  }else{
+    var L=[];
+    store = {
+      selectAll: async function(){ return L.slice(); },
+      insert: async function(row){ L.push(Object.assign({id:uid(),created_at:new Date().toISOString()},row)); },
+      updateById: async function(id,patch){ var x=L.find(function(r){return r.id===id;}); if(x) Object.assign(x,patch); },
+      updateByPonto: async function(pid,patch){ L.filter(function(r){return r.ponto_id===pid;}).forEach(function(r){Object.assign(r,patch);}); },
+      deleteById: async function(id){ L=L.filter(function(r){return r.id!==id;}); },
+      deletePonto: async function(pid){ L=L.filter(function(r){return r.ponto_id!==pid;}); }
+    };
+  }
+
+  /* ---------- state ---------- */
+  var rows=[], points=[], filter="todas", armed=false, heatOn=false;
+  var map, markerLayer, heatLayer;
+
+  /* ---------- helpers ---------- */
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function todayISO(){ var d=new Date(),o=d.getTimezoneOffset(); return new Date(d.getTime()-o*60000).toISOString().slice(0,10); }
+  function fmt(iso){ if(!iso) return "sem data"; var p=iso.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; }
+  function toast(m){ var t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("show");},2600); }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+  function countDone(p){ return p.eventos.filter(function(e){return e.tipo==="panfletada";}).length; }
+  function countSched(p){ return p.eventos.filter(function(e){return e.tipo==="agendada";}).length; }
+  function visible(p){ if(filter==="todas") return p.eventos.length>0; if(filter==="panfletada") return countDone(p)>0; return countSched(p)>0; }
+
+  function buildPoints(rws){
+    var m={};
+    rws.forEach(function(r){
+      var k=r.ponto_id;
+      if(!m[k]) m[k]={ id:k, ponto_id:k, rua:r.rua, lat:r.lat, lng:r.lng, eventos:[] };
+      m[k].eventos.push({ id:r.id, tipo:r.tipo, data:r.data });
+      if(r.rua) m[k].rua=r.rua;
+    });
+    return Object.keys(m).map(function(k){return m[k];});
+  }
+
+  async function reloadAndRender(){
+    try{
+      rows = await store.selectAll();
+      points = buildPoints(rows);
+      render();
+      if(ONLINE){ var b=document.getElementById("banner"); if(b.dataset.err){ b.style.display="none"; b.dataset.err=""; } }
+    }catch(e){
+      if(ONLINE){
+        var b2=document.getElementById("banner");
+        b2.dataset.err="1"; b2.style.display="block";
+        b2.innerHTML="Não consegui conectar ao banco. Confira a URL e a chave em <b>config.js</b> e as políticas (RLS) no Supabase.";
+      }
+    }
+  }
+
+  /* ---------- map ---------- */
+  function initMap(){
+    map=L.map("map",{zoomControl:false,attributionControl:true,tap:true}).setView([-30.0,-53.2],7);
+    L.control.zoom({position:"bottomright"}).addTo(map);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
+      subdomains:"abcd",maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(map);
+    map.fitBounds([[-33.85,-57.75],[-27.0,-49.6]]);
+    markerLayer=L.layerGroup().addTo(map);
+    map.on("click",function(e){ openForm({mode:"new",lat:e.latlng.lat,lng:e.latlng.lng}); setArmed(false); });
+  }
+
+  function pinIcon(p){
+    var done=countDone(p),sched=countSched(p),cls="pin",size,inner="";
+    if(done>0){ cls+= sched>0?" done both":" done"; size=Math.min(22+done*7,52); inner= done>1?'<span>'+done+'</span>':''; }
+    else { cls+=" sched"; size=24; inner="&#9201;"; }
+    var fs=Math.max(11,Math.round(size*0.38));
+    return L.divIcon({className:cls,html:'<div class="dot" style="width:'+size+'px;height:'+size+'px;font-size:'+fs+'px">'+inner+'</div>',iconSize:[size,size],iconAnchor:[size/2,size/2]});
+  }
+
+  function render(){
+    var done=0,total=0,sched=0;
+    points.forEach(function(p){ var d=countDone(p),s=countSched(p); if(d>0)done++; total+=d; sched+=s; });
+    document.getElementById("cDone").textContent=done;
+    document.getElementById("cTotal").textContent=total;
+    document.getElementById("cSched").textContent=sched;
+    markerLayer.clearLayers();
+    points.filter(visible).forEach(function(p){
+      var mk=L.marker([p.lat,p.lng],{icon:pinIcon(p)});
+      mk.on("click",function(){ openDetail(p.id); });
+      markerLayer.addLayer(mk);
+    });
+    updateHeat();
+  }
+
+  function updateHeat(){
+    if(heatLayer){ map.removeLayer(heatLayer); heatLayer=null; }
+    if(!heatOn||typeof L.heatLayer!=="function") return;
+    var pts=[];
+    points.forEach(function(p){ var d=countDone(p); if(d>0) pts.push([p.lat,p.lng,Math.min(0.35+d*0.25,1)]); });
+    if(pts.length) heatLayer=L.heatLayer(pts,{radius:34,blur:24,maxZoom:15,minOpacity:0.35,gradient:{0.2:"#5a0d0d",0.45:"#a11414",0.7:"#e02a1c",1.0:"#ff6a4d"}}).addTo(map);
+  }
+
+  /* ---------- sheet ---------- */
+  var scrim=document.getElementById("scrim"), sheet=document.getElementById("sheet");
+  function openSheet(html){ sheet.innerHTML=html; scrim.style.display="block"; requestAnimationFrame(function(){ sheet.classList.add("open"); }); }
+  function closeSheet(){ sheet.classList.remove("open"); scrim.style.display="none"; }
+  scrim.addEventListener("click",closeSheet);
+
+  var formState=null;
+  function openForm(opts){
+    formState=opts;
+    var p=opts.pointId?points.find(function(x){return x.id===opts.pointId;}):null;
+    var ev=opts.eventId&&p?p.eventos.find(function(x){return x.id===opts.eventId;}):null;
+    var tipo=ev?ev.tipo:(opts.tipo||"panfletada");
+    var data=ev?ev.data:todayISO();
+    var rua=p?p.rua:"";
+    var title,showRua,showType;
+    if(opts.mode==="new"){ title="Nova rua"; showRua=true; showType=true; }
+    else if(opts.mode==="addEvent"){ title="Registrar panfletagem"; showRua=false; showType=true; }
+    else if(opts.mode==="editEvent"){ title="Editar registro"; showRua=false; showType=true; }
+    else { title="Renomear rua"; showRua=true; showType=false; }
+
+    var h='<div class="grab"></div><h3>'+title+'</h3>';
+    h+='<div class="coord">'+(showRua?("Ponto: "+opts.lat.toFixed(5)+", "+opts.lng.toFixed(5)):escapeHtml(rua))+'</div>';
+    if(showRua){ h+='<label class="fld">Nome da rua / bairro (opcional)</label><input type="text" id="f_rua" placeholder="Ex.: Av. Borges de Medeiros" value="'+escapeHtml(rua)+'">'; }
+    if(showType){
+      h+='<label class="fld">Situação</label><div class="typesel" id="f_type">';
+      h+='<button type="button" data-sel="panfletada" class="'+(tipo==="panfletada"?"active":"")+'"><span class="em">&#9873;</span>Já panfletei</button>';
+      h+='<button type="button" data-sel="agendada" class="'+(tipo==="agendada"?"active":"")+'"><span class="em">&#9201;</span>Vou panfletar</button></div>';
+      h+='<label class="fld" id="f_datelbl">'+(tipo==="agendada"?"Data planejada":"Data em que panfletei")+'</label><input type="date" id="f_data" value="'+data+'">';
+    }
+    h+='<div class="actions"><button class="btn ghost" id="f_cancel">Cancelar</button><button class="btn primary" id="f_save">Salvar</button></div>';
+    openSheet(h);
+
+    var cur=tipo;
+    if(showType){
+      sheet.querySelectorAll("#f_type button").forEach(function(b){
+        b.addEventListener("click",function(){
+          cur=b.getAttribute("data-sel");
+          sheet.querySelectorAll("#f_type button").forEach(function(x){x.classList.remove("active");});
+          b.classList.add("active");
+          document.getElementById("f_datelbl").textContent=cur==="agendada"?"Data planejada":"Data em que panfletei";
+        });
+      });
+    }
+    document.getElementById("f_cancel").addEventListener("click",closeSheet);
+    document.getElementById("f_save").addEventListener("click",function(){ submitForm(cur); });
+  }
+
+  async function submitForm(tipo){
+    var o=formState;
+    var ruaEl=document.getElementById("f_rua"), dataEl=document.getElementById("f_data");
+    var rua=ruaEl?ruaEl.value.trim():null;
+    var data=dataEl?dataEl.value:null;
+    if(dataEl && !data){ toast("Escolha uma data."); return; }
+    try{
+      if(o.mode==="new"){
+        await store.insert({ ponto_id:uid(), rua:rua||"Rua sem nome", lat:o.lat, lng:o.lng, tipo:tipo, data:data });
+        toast(tipo==="panfletada"?"Rua marcada como panfletada.":"Panfletagem agendada.");
+      }else if(o.mode==="addEvent"){
+        var p=points.find(function(x){return x.id===o.pointId;});
+        await store.insert({ ponto_id:p.ponto_id, rua:p.rua, lat:p.lat, lng:p.lng, tipo:tipo, data:data });
+        toast(tipo==="panfletada"?"Mais uma panfletagem registrada.":"Nova data agendada.");
+      }else if(o.mode==="editEvent"){
+        await store.updateById(o.eventId,{ tipo:tipo, data:data });
+        toast("Registro atualizado.");
+      }else if(o.mode==="editPoint"){
+        var p2=points.find(function(x){return x.id===o.pointId;});
+        await store.updateByPonto(p2.ponto_id,{ rua:rua||"Rua sem nome" });
+        toast("Nome atualizado.");
+      }
+      closeSheet();
+      await reloadAndRender();
+    }catch(e){ toast("Não foi possível salvar. Tente de novo."); }
+  }
+
+  function openDetail(pointId){
+    var p=points.find(function(x){return x.id===pointId;});
+    if(!p) return;
+    var done=countDone(p),sched=countSched(p);
+    var evs=p.eventos.slice().sort(function(a,b){ return (b.data||"").localeCompare(a.data||""); });
+    var h='<div class="grab"></div><h3>'+escapeHtml(p.rua)+'</h3>';
+    h+='<div class="detmeta"><span><b>'+done+'</b> panfletada'+(done===1?"":"s")+'</span><span><b>'+sched+'</b> agendada'+(sched===1?"":"s")+'</span></div>';
+    h+='<div class="evlist">';
+    evs.forEach(function(e){
+      var over=e.tipo==="agendada"&&e.data&&e.data<todayISO();
+      h+='<div class="ev"><span class="tag '+e.tipo+'">'+(e.tipo==="panfletada"?"Feita":"Agendada")+'</span>'
+        +'<span class="d" data-edit="'+e.id+'">'+fmt(e.data)+(over?'<small class="overdue">atrasada &mdash; toque para reagendar</small>':'<small>toque para editar</small>')+'</span>'
+        +'<button class="x" data-del="'+e.id+'" title="Remover">&times;</button></div>';
+    });
+    h+='</div><button class="addbtn" id="d_add">+ Registrar panfletagem aqui</button>';
+    h+='<div class="actions"><button class="btn ghost" id="d_rename">Renomear</button><button class="btn danger" id="d_del">Excluir rua</button></div>';
+    openSheet(h);
+
+    document.getElementById("d_add").addEventListener("click",function(){ openForm({mode:"addEvent",pointId:p.id,lat:p.lat,lng:p.lng,tipo:"panfletada"}); });
+    document.getElementById("d_rename").addEventListener("click",function(){ openForm({mode:"editPoint",pointId:p.id,lat:p.lat,lng:p.lng}); });
+    document.getElementById("d_del").addEventListener("click",async function(){
+      if(confirm("Excluir esta rua e todas as suas panfletagens? Isso afeta todos.")){
+        try{ await store.deletePonto(p.ponto_id); closeSheet(); await reloadAndRender(); toast("Rua removida."); }
+        catch(e){ toast("Erro ao excluir."); }
+      }
+    });
+    sheet.querySelectorAll("[data-del]").forEach(function(b){
+      b.addEventListener("click",async function(ev){
+        ev.stopPropagation();
+        try{
+          await store.deleteById(b.getAttribute("data-del"));
+          await reloadAndRender();
+          var still=points.find(function(x){return x.id===p.id;});
+          if(still) openDetail(p.id); else closeSheet();
+        }catch(e){ toast("Erro ao remover registro."); }
+      });
+    });
+    sheet.querySelectorAll("[data-edit]").forEach(function(el){
+      el.addEventListener("click",function(){ openForm({mode:"editEvent",pointId:p.id,eventId:el.getAttribute("data-edit"),lat:p.lat,lng:p.lng}); });
+    });
+  }
+
+  /* ---------- controls ---------- */
+  function setArmed(v){ armed=v; var fab=document.getElementById("fab"),hint=document.getElementById("hint"); fab.classList.toggle("armed",v); fab.textContent=v?"\u2715":"+"; hint.style.display=v?"block":"none"; }
+  document.getElementById("fab").addEventListener("click",function(){ setArmed(!armed); });
+  document.getElementById("filter").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    filter=b.getAttribute("data-f");
+    this.querySelectorAll("button").forEach(function(x){x.classList.remove("active");});
+    b.classList.add("active"); render();
+  });
+  document.getElementById("heatToggle").addEventListener("change",function(){
+    heatOn=this.checked;
+    if(heatOn&&typeof L.heatLayer!=="function"){ toast("Mapa de calor indisponível aqui."); this.checked=false; heatOn=false; return; }
+    updateHeat();
+  });
+  document.getElementById("locate").addEventListener("click",function(){
+    if(!navigator.geolocation){ toast("Localização não suportada."); return; }
+    toast("Localizando\u2026");
+    navigator.geolocation.getCurrentPosition(function(pos){ map.setView([pos.coords.latitude,pos.coords.longitude],16); },
+      function(){ toast("Não consegui a localização."); }, {enableHighAccuracy:true,timeout:8000});
+  });
+
+  /* ---------- boot ---------- */
+  async function boot(){
+    initMap();
+    if(!ONLINE){
+      var b=document.getElementById("banner");
+      b.style.display="block";
+      b.innerHTML="Modo local (teste): edite <b>config.js</b> com a URL e a chave do Supabase para salvar e compartilhar. Por enquanto nada é gravado.";
+    }
+    await reloadAndRender();
+    document.getElementById("loading").style.display="none";
+    setTimeout(function(){ map.invalidateSize(); },200);
+    if(ONLINE){
+      setInterval(function(){ if(!sheet.classList.contains("open")) reloadAndRender(); },20000);
+      window.addEventListener("focus",function(){ if(!sheet.classList.contains("open")) reloadAndRender(); });
+    }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
