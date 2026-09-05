@@ -14,11 +14,13 @@ create table if not exists public.panfletagens (
   tipo        text not null check (tipo in ('panfletada','agendada')),
   data        date,
   pessoa      text,                         -- quem panfletou (opcional)
+  geom        jsonb,                        -- traçado do segmento de rua (OpenStreetMap), [[lat,lng],...]
   created_at  timestamptz not null default now()
 );
 
--- Se a tabela já existia antes deste campo, rode esta linha (é segura, não duplica):
+-- Se a tabela já existia antes destes campos, rode as linhas abaixo (são seguras, não duplicam):
 alter table public.panfletagens add column if not exists pessoa text;
+alter table public.panfletagens add column if not exists geom jsonb;
 
 create index if not exists panfletagens_ponto_idx on public.panfletagens (ponto_id);
 

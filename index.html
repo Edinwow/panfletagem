@@ -35,12 +35,6 @@
   .leaflet-bar a{background:var(--panel);color:var(--paper);border-color:#3a1210!important}
   .leaflet-bar a:hover{background:#301715}
 
-  .pin{transition:transform .08s ease}
-  .pin:active{transform:scale(.9)}
-  .pin .dot{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:"Oswald",sans-serif;font-weight:700;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.55)}
-  .pin.done .dot{background:radial-gradient(circle at 35% 30%,#ff5a4d,var(--red) 70%);border:2px solid #ffb3ab}
-  .pin.both .dot{box-shadow:0 0 0 3px var(--wheat),0 2px 8px rgba(0,0,0,.55)}
-  .pin.sched .dot{background:rgba(227,178,60,.12);border:2px dashed var(--wheat);color:var(--wheat);font-size:14px}
 
   .panel{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:230px;max-width:calc(100vw - 24px);
     background:linear-gradient(180deg,var(--panel),var(--oxblood-2));border:1px solid var(--panel-edge);border-left:4px solid var(--red);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:12px}
@@ -54,17 +48,15 @@
   .stat.n-sched b{color:var(--wheat)}
   .legend{margin-top:11px;border-top:1px solid #3a1210;padding-top:9px}
   .legend div{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--paper-dim);margin:5px 0}
-  .lg{width:14px;height:14px;border-radius:50%;flex:0 0 14px}
-  .lg.done{background:var(--red);border:1px solid #ffb3ab}
-  .lg.sched{background:rgba(227,178,60,.15);border:2px dashed var(--wheat)}
+  .lg{width:22px;height:5px;border-radius:3px;flex:0 0 22px}
+  .lg.done{background:var(--red)}
+  .lg.sched{background:repeating-linear-gradient(90deg,var(--wheat) 0 6px,transparent 6px 10px)}
 
-  .fab{position:fixed;z-index:1100;right:14px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:60px;height:60px;border-radius:50%;border:0;cursor:pointer;background:var(--red);color:#fff;font-size:34px;font-weight:300;line-height:1;box-shadow:0 0 0 3px var(--wheat),0 8px 22px rgba(0,0,0,.55)}
-  .fab:active{transform:scale(.94)}
-  .fab.armed{background:var(--wheat);color:#1a0d0c;box-shadow:0 0 0 3px var(--red),0 8px 22px rgba(0,0,0,.55)}
-  .locate{position:fixed;z-index:1100;right:16px;bottom:calc(env(safe-area-inset-bottom) + 84px);width:46px;height:46px;border-radius:50%;border:1px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:20px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+  .locate{position:fixed;z-index:1100;right:16px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:52px;height:52px;border-radius:50%;border:1px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:22px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
   .locate:active{transform:scale(.94)}
 
   .hint{position:fixed;z-index:1100;left:50%;top:calc(env(safe-area-inset-top) + 66px);transform:translateX(-50%);white-space:nowrap;background:var(--wheat);color:#1a0d0c;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:8px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.5);display:none}
+  .hint.actionable{background:var(--red);color:#fff;cursor:pointer}
 
   .scrim{position:fixed;inset:0;z-index:1500;background:rgba(8,3,3,.6);display:none;backdrop-filter:blur(2px)}
   .sheet{position:fixed;z-index:1600;left:0;right:0;bottom:0;background:linear-gradient(180deg,var(--panel),var(--oxblood));border-top:4px solid var(--red);border-radius:16px 16px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.6);padding:14px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(110%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:86vh;overflow:auto}
@@ -118,7 +110,6 @@
     .sheet{left:auto;right:24px;bottom:24px;width:420px;border-radius:16px;border-top:0;border-left:4px solid var(--red);transform:translateX(130%)}
     .sheet.open{transform:translateX(0)}
     .grab{display:none}
-    .fab{width:64px;height:64px}
   }
 </style>
 </head>
@@ -136,7 +127,7 @@
 
 <div id="map"></div>
 
-<div class="hint" id="hint">Toque no mapa na rua a marcar</div>
+<div class="hint" id="hint">Toque nas ruas para marcar</div>
 <div class="banner" id="banner"></div>
 
 <div class="panel" id="panel">
@@ -150,13 +141,12 @@
   <div class="stat"><span>Total de panfletagens</span><b id="cTotal">0</b></div>
   <div class="stat n-sched"><span>Agendadas</span><b id="cSched">0</b></div>
   <div class="legend">
-    <div><span class="lg done"></span> Panfletada &mdash; maior = mais vezes</div>
+    <div><span class="lg done"></span> Panfletada &mdash; mais espessa = mais vezes</div>
     <div><span class="lg sched"></span> Agendada (planejada)</div>
   </div>
 </div>
 
 <button class="locate" id="locate" title="Minha localização">&#9678;</button>
-<button class="fab" id="fab" aria-label="Adicionar rua">+</button>
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
@@ -200,8 +190,10 @@
   }
 
   /* ---------- state ---------- */
-  var rows=[], points=[], filter="todas", armed=false;
-  var map, markerLayer;
+  var rows=[], points=[], filter="todas";
+  var map, streetLayer, candidateLayer;
+  var candidates={}, selected={};
+  var SELECT_MIN_ZOOM=14;
 
   /* ---------- helpers ---------- */
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -217,9 +209,10 @@
     var m={};
     rws.forEach(function(r){
       var k=r.ponto_id;
-      if(!m[k]) m[k]={ id:k, ponto_id:k, rua:r.rua, lat:r.lat, lng:r.lng, eventos:[] };
+      if(!m[k]) m[k]={ id:k, ponto_id:k, rua:r.rua, lat:r.lat, lng:r.lng, geom:r.geom||null, eventos:[] };
       m[k].eventos.push({ id:r.id, tipo:r.tipo, data:r.data, pessoa:r.pessoa });
       if(r.rua) m[k].rua=r.rua;
+      if(r.geom && !m[k].geom) m[k].geom=r.geom;
     });
     return Object.keys(m).map(function(k){return m[k];});
   }
@@ -240,18 +233,22 @@
   }
 
   /* ---------- map ---------- */
-  var RS_BOUNDS=[[-33.85,-57.75],[-27.0,-49.6]];
   function initMap(){
-    map=L.map("map",{zoomControl:false,attributionControl:true,tap:true,minZoom:6,maxBounds:[[-34.35,-58.25],[-26.5,-49.1]],maxBoundsViscosity:0.8}).setView([-30.0,-53.2],7);
+    map=L.map("map",{zoomControl:false,attributionControl:true,tap:true,preferCanvas:true,minZoom:6,maxZoom:19,maxBounds:[[-34.35,-58.25],[-26.5,-49.1]],maxBoundsViscosity:0.8}).setView([-30.0346,-51.2177],13);
     L.control.zoom({position:"bottomright"}).addTo(map);
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",{
-      maxZoom:16,attribution:'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+      maxZoom:19,maxNativeZoom:16,attribution:'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
     }).addTo(map);
-    map.fitBounds(RS_BOUNDS);
-    markerLayer=L.layerGroup().addTo(map);
-    map.on("click",function(e){ openForm({mode:"new",lat:e.latlng.lat,lng:e.latlng.lng}); setArmed(false); });
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",{
+      maxZoom:19,maxNativeZoom:16
+    }).addTo(map);
+    map.createPane("candPane"); map.getPane("candPane").style.zIndex=410;
+    map.createPane("streetPane"); map.getPane("streetPane").style.zIndex=420;
+    streetLayer=L.layerGroup().addTo(map);
+    candidateLayer=L.layerGroup().addTo(map);
+    var moveTimer;
+    map.on("moveend",function(){ clearTimeout(moveTimer); moveTimer=setTimeout(updateStreets,250); });
     fetch("vendor/rs.geojson").then(function(r){return r.json();}).then(function(rs){
-      L.geoJSON(rs,{style:{color:"#e3b23c",weight:2,fillOpacity:0}}).addTo(map);
       var world=[[85,-180],[85,180],[-85,180],[-85,-180]];
       var holes=rs.geometry.coordinates.map(function(poly){
         return poly[0].map(function(c){return [c[1],c[0]];});
@@ -260,26 +257,136 @@
     }).catch(function(){});
   }
 
-  function pinIcon(p){
-    var done=countDone(p),sched=countSched(p),cls="pin",size,inner="";
-    if(done>0){ cls+= sched>0?" done both":" done"; size=Math.min(22+done*7,52); inner= done>1?'<span>'+done+'</span>':''; }
-    else { cls+=" sched"; size=24; inner="&#9201;"; }
-    var fs=Math.max(11,Math.round(size*0.38));
-    return L.divIcon({className:cls,html:'<div class="dot" style="width:'+size+'px;height:'+size+'px;font-size:'+fs+'px">'+inner+'</div>',iconSize:[size,size],iconAnchor:[size/2,size/2]});
-  }
-
   function render(){
     var done=0,total=0,sched=0;
     points.forEach(function(p){ var d=countDone(p),s=countSched(p); if(d>0)done++; total+=d; sched+=s; });
     document.getElementById("cDone").textContent=done;
     document.getElementById("cTotal").textContent=total;
     document.getElementById("cSched").textContent=sched;
-    markerLayer.clearLayers();
+    streetLayer.clearLayers();
     points.filter(visible).forEach(function(p){
-      var mk=L.marker([p.lat,p.lng],{icon:pinIcon(p)});
-      mk.on("click",function(){ openDetail(p.id); });
-      markerLayer.addLayer(mk);
+      if(!p.geom || p.geom.length<2) return;
+      var d=countDone(p);
+      var style=d>0?{color:"#ff4b3e",weight:Math.min(5+d*2,16),opacity:0.9,pane:"streetPane"}
+                   :{color:"#e3b23c",weight:5,opacity:0.85,dashArray:"2 10",pane:"streetPane"};
+      var layer=L.polyline(p.geom,style);
+      layer.on("click",function(){ openDetail(p.id); });
+      streetLayer.addLayer(layer);
     });
+  }
+
+  /* ---------- seleção de segmentos (ruas pré-carregadas por cidade) ---------- */
+  var candStyle={color:"#e3b23c",weight:18,opacity:0.03,pane:"candPane"};
+  var selStyle={color:"#ff4b3e",weight:11,opacity:0.95,pane:"candPane"};
+  var allWays={};
+  var loadedCities={};
+  var manifest=null;
+
+  function boundsIntersect(a,b){
+    return a[0]<=b[2] && a[2]>=b[0] && a[1]<=b[3] && a[3]>=b[1];
+  }
+
+  async function ensureCitiesLoaded(){
+    if(!manifest){
+      try{ manifest=await (await fetch("vendor/streets/manifest.json")).json(); }catch(e){ manifest=[]; }
+    }
+    var b=map.getBounds();
+    var mb=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()];
+    var toLoad=manifest.filter(function(c){ return c.file && !loadedCities[c.id] && boundsIntersect(c.bbox,mb); });
+    if(!toLoad.length) return;
+    await Promise.all(toLoad.map(async function(c){
+      loadedCities[c.id]=true;
+      try{
+        var ways=await (await fetch(c.file)).json();
+        ways.forEach(function(w){
+          var lats=w.geom.map(function(p){return p[0];}), lngs=w.geom.map(function(p){return p[1];});
+          allWays[w.id]={id:w.id,rua:w.rua,geom:w.geom,bounds:[Math.min.apply(null,lats),Math.min.apply(null,lngs),Math.max.apply(null,lats),Math.max.apply(null,lngs)]};
+        });
+      }catch(e){ delete loadedCities[c.id]; }
+    }));
+  }
+
+  function refreshCandidates(){
+    if(map.getZoom()<SELECT_MIN_ZOOM){ candidateLayer.clearLayers(); candidates={}; updateHint(); return; }
+    var b=map.getBounds();
+    var mb=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()];
+    candidateLayer.clearLayers();
+    candidates={};
+    Object.keys(allWays).forEach(function(id){
+      var w=allWays[id];
+      if(!boundsIntersect(w.bounds,mb)) return;
+      var isSel=!!selected[id];
+      var layer=L.polyline(w.geom,isSel?selStyle:candStyle);
+      layer.on("click",function(ev){ L.DomEvent.stopPropagation(ev); toggleSelect(id); });
+      candidates[id]={id:id,rua:w.rua,geom:w.geom,layer:layer};
+      if(isSel) selected[id]=candidates[id];
+      candidateLayer.addLayer(layer);
+    });
+    updateHint();
+  }
+
+  async function updateStreets(){
+    await ensureCitiesLoaded();
+    refreshCandidates();
+  }
+
+  function toggleSelect(id){
+    var c=candidates[id]; if(!c) return;
+    if(selected[id]){ delete selected[id]; c.layer.setStyle(candStyle); }
+    else { selected[id]=c; c.layer.setStyle(selStyle); }
+    updateHint();
+  }
+
+  function updateHint(){
+    var hint=document.getElementById("hint");
+    if(map.getZoom()<SELECT_MIN_ZOOM){ hint.style.display="none"; hint.classList.remove("actionable"); return; }
+    var n=Object.keys(selected).length;
+    hint.style.display="block";
+    if(n>0){ hint.textContent="Confirmar "+n+" rua"+(n>1?"s":"")+" selecionada"+(n>1?"s":""); hint.classList.add("actionable"); }
+    else { hint.textContent="Toque nas ruas para marcar"; hint.classList.remove("actionable"); }
+  }
+
+  function openConfirmForm(){
+    var segs=Object.keys(selected).map(function(k){return selected[k];});
+    var n=segs.length, tipo="panfletada", data=todayISO();
+    var h='<div class="grab"></div><h3>Registrar '+n+' rua'+(n>1?"s":"")+'</h3>';
+    h+='<div class="coord">'+segs.map(function(s){return escapeHtml(s.rua);}).join(", ")+'</div>';
+    h+='<label class="fld">Situação</label><div class="typesel" id="f_type">';
+    h+='<button type="button" data-sel="panfletada" class="active"><span class="em">&#9873;</span>Já panfletei</button>';
+    h+='<button type="button" data-sel="agendada"><span class="em">&#9201;</span>Vou panfletar</button></div>';
+    h+='<label class="fld" id="f_datelbl">Data em que panfletei</label><input type="date" id="f_data" value="'+data+'">';
+    h+='<label class="fld">Quem panfletou (opcional)</label><input type="text" id="f_pessoa" placeholder="Ex.: Maria" value="">';
+    h+='<div class="actions"><button class="btn ghost" id="f_cancel">Cancelar</button><button class="btn primary" id="f_save">Salvar</button></div>';
+    openSheet(h);
+
+    var cur=tipo;
+    sheet.querySelectorAll("#f_type button").forEach(function(b){
+      b.addEventListener("click",function(){
+        cur=b.getAttribute("data-sel");
+        sheet.querySelectorAll("#f_type button").forEach(function(x){x.classList.remove("active");});
+        b.classList.add("active");
+        document.getElementById("f_datelbl").textContent=cur==="agendada"?"Data planejada":"Data em que panfletei";
+      });
+    });
+    document.getElementById("f_cancel").addEventListener("click",closeSheet);
+    document.getElementById("f_save").addEventListener("click",function(){ submitSegments(cur,segs); });
+  }
+
+  async function submitSegments(tipo,segs){
+    var dataEl=document.getElementById("f_data"), pessoaEl=document.getElementById("f_pessoa");
+    var data=dataEl.value, pessoa=pessoaEl.value.trim();
+    if(!data){ toast("Escolha uma data."); return; }
+    try{
+      await Promise.all(segs.map(function(s){
+        var mid=s.geom[Math.floor(s.geom.length/2)];
+        return store.insert({ ponto_id:s.id, rua:s.rua, lat:mid[0], lng:mid[1], tipo:tipo, data:data, pessoa:pessoa||null, geom:s.geom });
+      }));
+      toast(tipo==="panfletada"?"Rua(s) marcada(s) como panfletada(s).":"Panfletagem agendada.");
+      closeSheet();
+      selected={};
+      await reloadAndRender();
+      refreshCandidates();
+    }catch(e){ toast("Não foi possível salvar. Tente de novo."); }
   }
 
   /* ---------- sheet ---------- */
@@ -297,14 +404,13 @@
     var data=ev?ev.data:todayISO();
     var pessoa=ev?(ev.pessoa||""):"";
     var rua=p?p.rua:"";
-    var title,showRuaInput,showCoord,showType;
-    if(opts.mode==="new"){ title="Nova rua"; showRuaInput=false; showCoord=true; showType=true; }
-    else if(opts.mode==="addEvent"){ title="Registrar panfletagem"; showRuaInput=false; showCoord=false; showType=true; }
-    else if(opts.mode==="editEvent"){ title="Editar registro"; showRuaInput=false; showCoord=false; showType=true; }
-    else { title="Renomear rua"; showRuaInput=true; showCoord=false; showType=false; }
+    var title,showRuaInput,showType;
+    if(opts.mode==="addEvent"){ title="Registrar panfletagem"; showRuaInput=false; showType=true; }
+    else if(opts.mode==="editEvent"){ title="Editar registro"; showRuaInput=false; showType=true; }
+    else { title="Renomear rua"; showRuaInput=true; showType=false; }
 
     var h='<div class="grab"></div><h3>'+title+'</h3>';
-    h+='<div class="coord">'+(showCoord?("Ponto: "+opts.lat.toFixed(5)+", "+opts.lng.toFixed(5)+" — o nome da rua é identificado automaticamente"):escapeHtml(rua))+'</div>';
+    h+='<div class="coord">'+escapeHtml(rua)+'</div>';
     if(showRuaInput){ h+='<label class="fld">Nome da rua / bairro</label><input type="text" id="f_rua" placeholder="Ex.: Av. Borges de Medeiros" value="'+escapeHtml(rua)+'">'; }
     if(showType){
       h+='<label class="fld">Situação</label><div class="typesel" id="f_type">';
@@ -331,16 +437,6 @@
     document.getElementById("f_save").addEventListener("click",function(){ submitForm(cur); });
   }
 
-  async function lookupRua(lat,lng){
-    try{
-      var r=await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="+lat+"&lon="+lng+"&zoom=17&addressdetails=1");
-      if(!r.ok) return "Rua sem nome";
-      var d=await r.json();
-      var a=d.address||{};
-      return a.road||a.pedestrian||a.residential||a.neighbourhood||a.suburb||"Rua sem nome";
-    }catch(e){ return "Rua sem nome"; }
-  }
-
   async function submitForm(tipo){
     var o=formState;
     var ruaEl=document.getElementById("f_rua"), dataEl=document.getElementById("f_data"), pessoaEl=document.getElementById("f_pessoa");
@@ -349,12 +445,7 @@
     var pessoa=pessoaEl?pessoaEl.value.trim():null;
     if(dataEl && !data){ toast("Escolha uma data."); return; }
     try{
-      if(o.mode==="new"){
-        toast("Identificando a rua…");
-        var ruaAuto=await lookupRua(o.lat,o.lng);
-        await store.insert({ ponto_id:uid(), rua:ruaAuto, lat:o.lat, lng:o.lng, tipo:tipo, data:data, pessoa:pessoa||null });
-        toast(tipo==="panfletada"?"Rua marcada como panfletada.":"Panfletagem agendada.");
-      }else if(o.mode==="addEvent"){
+      if(o.mode==="addEvent"){
         var p=points.find(function(x){return x.id===o.pointId;});
         await store.insert({ ponto_id:p.ponto_id, rua:p.rua, lat:p.lat, lng:p.lng, tipo:tipo, data:data, pessoa:pessoa||null });
         toast(tipo==="panfletada"?"Mais uma panfletagem registrada.":"Nova data agendada.");
@@ -389,8 +480,8 @@
     h+='<div class="actions"><button class="btn ghost" id="d_rename">Renomear</button><button class="btn danger" id="d_del">Excluir rua</button></div>';
     openSheet(h);
 
-    document.getElementById("d_add").addEventListener("click",function(){ openForm({mode:"addEvent",pointId:p.id,lat:p.lat,lng:p.lng,tipo:"panfletada"}); });
-    document.getElementById("d_rename").addEventListener("click",function(){ openForm({mode:"editPoint",pointId:p.id,lat:p.lat,lng:p.lng}); });
+    document.getElementById("d_add").addEventListener("click",function(){ openForm({mode:"addEvent",pointId:p.id,tipo:"panfletada"}); });
+    document.getElementById("d_rename").addEventListener("click",function(){ openForm({mode:"editPoint",pointId:p.id}); });
     document.getElementById("d_del").addEventListener("click",async function(){
       if(confirm("Excluir esta rua e todas as suas panfletagens? Isso afeta todos.")){
         try{ await store.deletePonto(p.ponto_id); closeSheet(); await reloadAndRender(); toast("Rua removida."); }
@@ -409,13 +500,12 @@
       });
     });
     sheet.querySelectorAll("[data-edit]").forEach(function(el){
-      el.addEventListener("click",function(){ openForm({mode:"editEvent",pointId:p.id,eventId:el.getAttribute("data-edit"),lat:p.lat,lng:p.lng}); });
+      el.addEventListener("click",function(){ openForm({mode:"editEvent",pointId:p.id,eventId:el.getAttribute("data-edit")}); });
     });
   }
 
   /* ---------- controls ---------- */
-  function setArmed(v){ armed=v; var fab=document.getElementById("fab"),hint=document.getElementById("hint"); fab.classList.toggle("armed",v); fab.textContent=v?"\u2715":"+"; hint.style.display=v?"block":"none"; }
-  document.getElementById("fab").addEventListener("click",function(){ setArmed(!armed); });
+  document.getElementById("hint").addEventListener("click",function(){ if(Object.keys(selected).length>0) openConfirmForm(); });
   document.getElementById("filter").addEventListener("click",function(e){
     var b=e.target.closest("button"); if(!b) return;
     filter=b.getAttribute("data-f");
@@ -438,6 +528,7 @@
       b.innerHTML="Modo local (teste): edite <b>config.js</b> com a URL e a chave do Supabase para salvar e compartilhar. Por enquanto nada é gravado.";
     }
     await reloadAndRender();
+    await updateStreets();
     document.getElementById("loading").style.display="none";
     setTimeout(function(){ map.invalidateSize(); },200);
     if(ONLINE){
