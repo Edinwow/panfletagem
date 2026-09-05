@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Frente da Panfletagem — Rio Grande do Sul</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="vendor/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
@@ -52,19 +52,11 @@
   .stat b{font-family:"Oswald",sans-serif;font-size:15px;color:var(--paper)}
   .stat.n-done b{color:var(--red-bright)}
   .stat.n-sched b{color:var(--wheat)}
-  .toggle-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--paper-dim)}
-  .switch{position:relative;width:38px;height:22px;flex:0 0 38px}
-  .switch input{opacity:0;width:0;height:0}
-  .switch span{position:absolute;inset:0;background:#3a1210;border-radius:22px;transition:.2s;cursor:pointer}
-  .switch span:before{content:"";position:absolute;height:16px;width:16px;left:3px;top:3px;background:#c9b9a6;border-radius:50%;transition:.2s}
-  .switch input:checked + span{background:var(--red)}
-  .switch input:checked + span:before{transform:translateX(16px);background:#fff}
   .legend{margin-top:11px;border-top:1px solid #3a1210;padding-top:9px}
   .legend div{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--paper-dim);margin:5px 0}
   .lg{width:14px;height:14px;border-radius:50%;flex:0 0 14px}
   .lg.done{background:var(--red);border:1px solid #ffb3ab}
   .lg.sched{background:rgba(227,178,60,.15);border:2px dashed var(--wheat)}
-  .lg.hot{background:radial-gradient(circle,#ff4b3e,#8f1010)}
 
   .fab{position:fixed;z-index:1100;right:14px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:60px;height:60px;border-radius:50%;border:0;cursor:pointer;background:var(--red);color:#fff;font-size:34px;font-weight:300;line-height:1;box-shadow:0 0 0 3px var(--wheat),0 8px 22px rgba(0,0,0,.55)}
   .fab:active{transform:scale(.94)}
@@ -157,14 +149,9 @@
   <div class="stat n-done"><span>Ruas panfletadas</span><b id="cDone">0</b></div>
   <div class="stat"><span>Total de panfletagens</span><b id="cTotal">0</b></div>
   <div class="stat n-sched"><span>Agendadas</span><b id="cSched">0</b></div>
-  <div class="toggle-row">
-    <label class="switch"><input type="checkbox" id="heatToggle"><span></span></label>
-    <span>Mapa de calor (onde mais panfletei)</span>
-  </div>
   <div class="legend">
     <div><span class="lg done"></span> Panfletada &mdash; maior = mais vezes</div>
     <div><span class="lg sched"></span> Agendada (planejada)</div>
-    <div><span class="lg hot"></span> Concentração de panfletagem</div>
   </div>
 </div>
 
@@ -176,8 +163,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<script src="vendor/leaflet.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -202,20 +188,20 @@
       deletePonto: async function(pid){ var r=await fetch(API+"?ponto_id=eq."+enc(pid),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); }
     };
   }else{
-    var L=[];
+    var localRows=[];
     store = {
-      selectAll: async function(){ return L.slice(); },
-      insert: async function(row){ L.push(Object.assign({id:uid(),created_at:new Date().toISOString()},row)); },
-      updateById: async function(id,patch){ var x=L.find(function(r){return r.id===id;}); if(x) Object.assign(x,patch); },
-      updateByPonto: async function(pid,patch){ L.filter(function(r){return r.ponto_id===pid;}).forEach(function(r){Object.assign(r,patch);}); },
-      deleteById: async function(id){ L=L.filter(function(r){return r.id!==id;}); },
-      deletePonto: async function(pid){ L=L.filter(function(r){return r.ponto_id!==pid;}); }
+      selectAll: async function(){ return localRows.slice(); },
+      insert: async function(row){ localRows.push(Object.assign({id:uid(),created_at:new Date().toISOString()},row)); },
+      updateById: async function(id,patch){ var x=localRows.find(function(r){return r.id===id;}); if(x) Object.assign(x,patch); },
+      updateByPonto: async function(pid,patch){ localRows.filter(function(r){return r.ponto_id===pid;}).forEach(function(r){Object.assign(r,patch);}); },
+      deleteById: async function(id){ localRows=localRows.filter(function(r){return r.id!==id;}); },
+      deletePonto: async function(pid){ localRows=localRows.filter(function(r){return r.ponto_id!==pid;}); }
     };
   }
 
   /* ---------- state ---------- */
-  var rows=[], points=[], filter="todas", armed=false, heatOn=false;
-  var map, markerLayer, heatLayer;
+  var rows=[], points=[], filter="todas", armed=false;
+  var map, markerLayer;
 
   /* ---------- helpers ---------- */
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -232,7 +218,7 @@
     rws.forEach(function(r){
       var k=r.ponto_id;
       if(!m[k]) m[k]={ id:k, ponto_id:k, rua:r.rua, lat:r.lat, lng:r.lng, eventos:[] };
-      m[k].eventos.push({ id:r.id, tipo:r.tipo, data:r.data });
+      m[k].eventos.push({ id:r.id, tipo:r.tipo, data:r.data, pessoa:r.pessoa });
       if(r.rua) m[k].rua=r.rua;
     });
     return Object.keys(m).map(function(k){return m[k];});
@@ -285,15 +271,6 @@
       mk.on("click",function(){ openDetail(p.id); });
       markerLayer.addLayer(mk);
     });
-    updateHeat();
-  }
-
-  function updateHeat(){
-    if(heatLayer){ map.removeLayer(heatLayer); heatLayer=null; }
-    if(!heatOn||typeof L.heatLayer!=="function") return;
-    var pts=[];
-    points.forEach(function(p){ var d=countDone(p); if(d>0) pts.push([p.lat,p.lng,Math.min(0.35+d*0.25,1)]); });
-    if(pts.length) heatLayer=L.heatLayer(pts,{radius:34,blur:24,maxZoom:15,minOpacity:0.35,gradient:{0.2:"#5a0d0d",0.45:"#a11414",0.7:"#e02a1c",1.0:"#ff6a4d"}}).addTo(map);
   }
 
   /* ---------- sheet ---------- */
@@ -309,6 +286,7 @@
     var ev=opts.eventId&&p?p.eventos.find(function(x){return x.id===opts.eventId;}):null;
     var tipo=ev?ev.tipo:(opts.tipo||"panfletada");
     var data=ev?ev.data:todayISO();
+    var pessoa=ev?(ev.pessoa||""):"";
     var rua=p?p.rua:"";
     var title,showRua,showType;
     if(opts.mode==="new"){ title="Nova rua"; showRua=true; showType=true; }
@@ -324,6 +302,7 @@
       h+='<button type="button" data-sel="panfletada" class="'+(tipo==="panfletada"?"active":"")+'"><span class="em">&#9873;</span>Já panfletei</button>';
       h+='<button type="button" data-sel="agendada" class="'+(tipo==="agendada"?"active":"")+'"><span class="em">&#9201;</span>Vou panfletar</button></div>';
       h+='<label class="fld" id="f_datelbl">'+(tipo==="agendada"?"Data planejada":"Data em que panfletei")+'</label><input type="date" id="f_data" value="'+data+'">';
+      h+='<label class="fld">Quem panfletou (opcional)</label><input type="text" id="f_pessoa" placeholder="Ex.: Maria" value="'+escapeHtml(pessoa)+'">';
     }
     h+='<div class="actions"><button class="btn ghost" id="f_cancel">Cancelar</button><button class="btn primary" id="f_save">Salvar</button></div>';
     openSheet(h);
@@ -345,20 +324,21 @@
 
   async function submitForm(tipo){
     var o=formState;
-    var ruaEl=document.getElementById("f_rua"), dataEl=document.getElementById("f_data");
+    var ruaEl=document.getElementById("f_rua"), dataEl=document.getElementById("f_data"), pessoaEl=document.getElementById("f_pessoa");
     var rua=ruaEl?ruaEl.value.trim():null;
     var data=dataEl?dataEl.value:null;
+    var pessoa=pessoaEl?pessoaEl.value.trim():null;
     if(dataEl && !data){ toast("Escolha uma data."); return; }
     try{
       if(o.mode==="new"){
-        await store.insert({ ponto_id:uid(), rua:rua||"Rua sem nome", lat:o.lat, lng:o.lng, tipo:tipo, data:data });
+        await store.insert({ ponto_id:uid(), rua:rua||"Rua sem nome", lat:o.lat, lng:o.lng, tipo:tipo, data:data, pessoa:pessoa||null });
         toast(tipo==="panfletada"?"Rua marcada como panfletada.":"Panfletagem agendada.");
       }else if(o.mode==="addEvent"){
         var p=points.find(function(x){return x.id===o.pointId;});
-        await store.insert({ ponto_id:p.ponto_id, rua:p.rua, lat:p.lat, lng:p.lng, tipo:tipo, data:data });
+        await store.insert({ ponto_id:p.ponto_id, rua:p.rua, lat:p.lat, lng:p.lng, tipo:tipo, data:data, pessoa:pessoa||null });
         toast(tipo==="panfletada"?"Mais uma panfletagem registrada.":"Nova data agendada.");
       }else if(o.mode==="editEvent"){
-        await store.updateById(o.eventId,{ tipo:tipo, data:data });
+        await store.updateById(o.eventId,{ tipo:tipo, data:data, pessoa:pessoa||null });
         toast("Registro atualizado.");
       }else if(o.mode==="editPoint"){
         var p2=points.find(function(x){return x.id===o.pointId;});
@@ -381,7 +361,7 @@
     evs.forEach(function(e){
       var over=e.tipo==="agendada"&&e.data&&e.data<todayISO();
       h+='<div class="ev"><span class="tag '+e.tipo+'">'+(e.tipo==="panfletada"?"Feita":"Agendada")+'</span>'
-        +'<span class="d" data-edit="'+e.id+'">'+fmt(e.data)+(over?'<small class="overdue">atrasada &mdash; toque para reagendar</small>':'<small>toque para editar</small>')+'</span>'
+        +'<span class="d" data-edit="'+e.id+'">'+fmt(e.data)+(e.pessoa?" &middot; "+escapeHtml(e.pessoa):"")+(over?'<small class="overdue">atrasada &mdash; toque para reagendar</small>':'<small>toque para editar</small>')+'</span>'
         +'<button class="x" data-del="'+e.id+'" title="Remover">&times;</button></div>';
     });
     h+='</div><button class="addbtn" id="d_add">+ Registrar panfletagem aqui</button>';
@@ -420,11 +400,6 @@
     filter=b.getAttribute("data-f");
     this.querySelectorAll("button").forEach(function(x){x.classList.remove("active");});
     b.classList.add("active"); render();
-  });
-  document.getElementById("heatToggle").addEventListener("change",function(){
-    heatOn=this.checked;
-    if(heatOn&&typeof L.heatLayer!=="function"){ toast("Mapa de calor indisponível aqui."); this.checked=false; heatOn=false; return; }
-    updateHeat();
   });
   document.getElementById("locate").addEventListener("click",function(){
     if(!navigator.geolocation){ toast("Localização não suportada."); return; }

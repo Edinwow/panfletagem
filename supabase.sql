@@ -13,8 +13,12 @@ create table if not exists public.panfletagens (
   lng         double precision not null,
   tipo        text not null check (tipo in ('panfletada','agendada')),
   data        date,
+  pessoa      text,                         -- quem panfletou (opcional)
   created_at  timestamptz not null default now()
 );
+
+-- Se a tabela já existia antes deste campo, rode esta linha (é segura, não duplica):
+alter table public.panfletagens add column if not exists pessoa text;
 
 create index if not exists panfletagens_ponto_idx on public.panfletagens (ponto_id);
 
