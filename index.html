@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Panfletagem</title>
 <link rel="stylesheet" href="vendor/leaflet.min.css">
+<link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
@@ -21,7 +22,7 @@
 
   header{position:fixed;top:0;left:0;right:0;z-index:1200;display:flex;align-items:center;gap:12px;
     padding:calc(env(safe-area-inset-top) + 10px) 14px 44px;
-    background:linear-gradient(180deg,rgba(20,8,7,.97),rgba(20,8,7,.85) 60%,rgba(20,8,7,0));pointer-events:none}
+    background:linear-gradient(180deg,rgba(20,8,7,.65),rgba(20,8,7,.45) 60%,rgba(20,8,7,0));pointer-events:none}
   header .star{pointer-events:auto;width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 0 2px var(--wheat),0 4px 14px rgba(0,0,0,.5)}
   header .titles{pointer-events:auto;line-height:1}
   header h1{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;letter-spacing:.5px;margin:0;color:var(--paper)}
@@ -118,6 +119,8 @@
 
 <script src="config.js"></script>
 <script src="vendor/leaflet.min.js"></script>
+<script src="vendor/maplibre/maplibre-gl.js"></script>
+<script src="vendor/maplibre/leaflet-maplibre-gl.js"></script>
 <script>
 (function(){
   "use strict";
@@ -199,12 +202,7 @@
   function initMap(){
     map=L.map("map",{zoomControl:false,attributionControl:true,tap:true,preferCanvas:true,minZoom:6,maxZoom:19,maxBounds:[[-34.35,-58.25],[-26.5,-49.1]],maxBoundsViscosity:0.8}).setView([-30.0346,-51.2177],13);
     L.control.zoom({position:"bottomright"}).addTo(map);
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",{
-      maxZoom:19,maxNativeZoom:16,attribution:'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
-    }).addTo(map);
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",{
-      maxZoom:19,maxNativeZoom:16
-    }).addTo(map);
+    L.maplibreGL({style:"vendor/maplibre/style-dark.json"}).addTo(map);
     map.createPane("candPane"); map.getPane("candPane").style.zIndex=410;
     map.createPane("streetPane"); map.getPane("streetPane").style.zIndex=420;
     streetLayer=L.layerGroup().addTo(map);
