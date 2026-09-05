@@ -192,7 +192,7 @@
   /* ---------- state ---------- */
   var rows=[], points=[], filter="todas";
   var map, streetLayer, candidateLayer;
-  var candidates={}, selected={};
+  var selected={};
   var SELECT_MIN_ZOOM=14;
 
   /* ---------- helpers ---------- */
@@ -248,6 +248,11 @@
     candidateLayer=L.layerGroup().addTo(map);
     var moveTimer;
     map.on("moveend",function(){ clearTimeout(moveTimer); moveTimer=setTimeout(updateStreets,250); });
+    map.on("click",function(e){
+      if(map.getZoom()<SELECT_MIN_ZOOM) return;
+      var id=findNearestWay(e.latlng);
+      if(id) toggleSelect(id);
+    });
     fetch("vendor/rs.geojson").then(function(r){return r.json();}).then(function(rs){
       var world=[[85,-180],[85,180],[-85,180],[-85,-180]];
       var holes=rs.geometry.coordinates.map(function(poly){
@@ -270,17 +275,17 @@
       var style=d>0?{color:"#ff4b3e",weight:Math.min(5+d*2,16),opacity:0.9,pane:"streetPane"}
                    :{color:"#e3b23c",weight:5,opacity:0.85,dashArray:"2 10",pane:"streetPane"};
       var layer=L.polyline(p.geom,style);
-      layer.on("click",function(){ openDetail(p.id); });
+      layer.on("click",function(ev){ L.DomEvent.stopPropagation(ev); openDetail(p.id); });
       streetLayer.addLayer(layer);
     });
   }
 
   /* ---------- seleção de segmentos (ruas pré-carregadas por cidade) ---------- */
-  var candStyle={color:"#e3b23c",weight:18,opacity:0.03,pane:"candPane"};
   var selStyle={color:"#ff4b3e",weight:11,opacity:0.95,pane:"candPane"};
   var allWays={};
   var loadedCities={};
   var manifest=null;
+  var CLICK_TOLERANCE_PX=16;
 
   function boundsIntersect(a,b){
     return a[0]<=b[2] && a[2]>=b[0] && a[1]<=b[3] && a[3]>=b[1];
@@ -306,34 +311,48 @@
     }));
   }
 
-  function refreshCandidates(){
-    if(map.getZoom()<SELECT_MIN_ZOOM){ candidateLayer.clearLayers(); candidates={}; updateHint(); return; }
-    var b=map.getBounds();
-    var mb=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()];
-    candidateLayer.clearLayers();
-    candidates={};
-    Object.keys(allWays).forEach(function(id){
-      var w=allWays[id];
-      if(!boundsIntersect(w.bounds,mb)) return;
-      var isSel=!!selected[id];
-      var layer=L.polyline(w.geom,isSel?selStyle:candStyle);
-      layer.on("click",function(ev){ L.DomEvent.stopPropagation(ev); toggleSelect(id); });
-      candidates[id]={id:id,rua:w.rua,geom:w.geom,layer:layer};
-      if(isSel) selected[id]=candidates[id];
-      candidateLayer.addLayer(layer);
-    });
+  async function updateStreets(){
+    await ensureCitiesLoaded();
     updateHint();
   }
 
-  async function updateStreets(){
-    await ensureCitiesLoaded();
-    refreshCandidates();
+  function distToSegment(p,a,b){
+    var dx=b.x-a.x, dy=b.y-a.y;
+    var lenSq=dx*dx+dy*dy;
+    var t=lenSq?((p.x-a.x)*dx+(p.y-a.y)*dy)/lenSq:0;
+    t=Math.max(0,Math.min(1,t));
+    var cx=a.x+t*dx, cy=a.y+t*dy, ddx=p.x-cx, ddy=p.y-cy;
+    return Math.sqrt(ddx*ddx+ddy*ddy);
+  }
+
+  function findNearestWay(latlng){
+    var clickPt=map.latLngToContainerPoint(latlng);
+    var buf=0.003;
+    var best=null, bestDist=CLICK_TOLERANCE_PX;
+    Object.keys(allWays).forEach(function(id){
+      var w=allWays[id];
+      if(w.bounds[0]-buf>latlng.lat || w.bounds[2]+buf<latlng.lat || w.bounds[1]-buf>latlng.lng || w.bounds[3]+buf<latlng.lng) return;
+      for(var i=0;i<w.geom.length-1;i++){
+        var a=map.latLngToContainerPoint(w.geom[i]);
+        var b=map.latLngToContainerPoint(w.geom[i+1]);
+        var d=distToSegment(clickPt,a,b);
+        if(d<bestDist){ bestDist=d; best=id; }
+      }
+    });
+    return best;
   }
 
   function toggleSelect(id){
-    var c=candidates[id]; if(!c) return;
-    if(selected[id]){ delete selected[id]; c.layer.setStyle(candStyle); }
-    else { selected[id]=c; c.layer.setStyle(selStyle); }
+    if(selected[id]){
+      candidateLayer.removeLayer(selected[id].layer);
+      delete selected[id];
+    }else{
+      var w=allWays[id]; if(!w) return;
+      var layer=L.polyline(w.geom,selStyle);
+      layer.on("click",function(ev){ L.DomEvent.stopPropagation(ev); toggleSelect(id); });
+      candidateLayer.addLayer(layer);
+      selected[id]={id:id,rua:w.rua,geom:w.geom,layer:layer};
+    }
     updateHint();
   }
 
@@ -383,9 +402,9 @@
       }));
       toast(tipo==="panfletada"?"Rua(s) marcada(s) como panfletada(s).":"Panfletagem agendada.");
       closeSheet();
+      candidateLayer.clearLayers();
       selected={};
       await reloadAndRender();
-      refreshCandidates();
     }catch(e){ toast("Não foi possível salvar. Tente de novo."); }
   }
 
