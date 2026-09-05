@@ -8,6 +8,6 @@
 //  feita para ficar pública em páginas web.
 // ============================================================
 window.PANFLETO_CONFIG = {
-  url: "",   // ex.: https://abcdefgh.supabase.co
-  key: ""    // ex.: sb_publishable_xxxxxxxxxxxxxxxx
+  url: "https://lhhmtycrqildhqlpuoeb.supabase.co",
+  key: "sb_publishable_VfE1SMb9zE9WY1Cc1DMlnQ_M_4IfMJ1"
 };
