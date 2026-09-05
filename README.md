@@ -58,7 +58,8 @@ Sempre que você editar algo no GitHub, a Vercel republica sozinha.
 ## Como usar o app
 
 - **Toque no mapa** na rua onde panfletou (ou toque no **+** e depois no ponto). Escolha *Já panfletei* ou *Vou panfletar* e a data.
-- **Repetição:** toque no marcador da rua e use *Registrar panfletagem aqui*. Cada nova vez engorda o marcador e mostra o número de vezes. O botão **Mapa de calor** revela onde houve mais panfletagem.
+- **Repetição:** toque no marcador da rua e use *Registrar panfletagem aqui*. Cada nova vez engorda o marcador e mostra o número de vezes — assim as ruas mais panfletadas já se destacam sozinhas no mapa.
+- **Quem panfletou:** ao registrar, dá para preencher opcionalmente o nome de quem fez a panfletagem.
 - **Filtros:** todas / só feitas / só agendadas. Agendadas com data vencida aparecem como *atrasada*.
 - **Editar/apagar:** no marcador dá para editar cada registro (toque na data), renomear ou excluir a rua.
 - Botão de **localização** pula direto para onde você está (bom no celular).
