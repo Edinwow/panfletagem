@@ -24,7 +24,7 @@
     background:linear-gradient(180deg,rgba(20,8,7,.97),rgba(20,8,7,.82) 70%,rgba(20,8,7,0));pointer-events:none}
   header .star{pointer-events:auto;width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 0 2px var(--wheat),0 4px 14px rgba(0,0,0,.5)}
   header .titles{pointer-events:auto;line-height:1}
-  header h1{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;letter-spacing:.5px;margin:0;color:var(--paper);text-transform:uppercase}
+  header h1{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;letter-spacing:.5px;margin:0;color:var(--paper)}
   header h1 b{color:var(--red-bright)}
   header .sub{font-size:11px;color:var(--paper-dim);margin-top:3px;letter-spacing:.3px}
 
@@ -44,7 +44,7 @@
 
   .panel{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:230px;max-width:calc(100vw - 24px);
     background:linear-gradient(180deg,var(--panel),var(--oxblood-2));border:1px solid var(--panel-edge);border-left:4px solid var(--red);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:12px}
-  .panel h2{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--wheat);margin:0 0 9px;font-weight:600}
+  .panel h2{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:1.5px;color:var(--wheat);margin:0 0 9px;font-weight:600}
   .seg{display:flex;background:#160a09;border:1px solid #3a1210;border-radius:8px;overflow:hidden;margin-bottom:10px}
   .seg button{flex:1;border:0;background:transparent;color:var(--paper-dim);font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.4px;padding:8px 4px;cursor:pointer}
   .seg button.active{background:var(--red);color:#fff}
@@ -70,9 +70,9 @@
   .sheet{position:fixed;z-index:1600;left:0;right:0;bottom:0;background:linear-gradient(180deg,var(--panel),var(--oxblood));border-top:4px solid var(--red);border-radius:16px 16px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.6);padding:14px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(110%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:86vh;overflow:auto}
   .sheet.open{transform:translateY(0)}
   .grab{width:44px;height:4px;background:#5a2a26;border-radius:4px;margin:2px auto 12px}
-  .sheet h3{font-family:"Oswald",sans-serif;font-weight:700;font-size:20px;margin:0 0 3px;text-transform:uppercase;letter-spacing:.5px}
+  .sheet h3{font-family:"Oswald",sans-serif;font-weight:700;font-size:20px;margin:0 0 3px;letter-spacing:.5px}
   .sheet .coord{font-size:11px;color:var(--paper-dim);margin-bottom:14px}
-  label.fld{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--wheat);margin:14px 0 6px;font-family:"Oswald",sans-serif;font-weight:600}
+  label.fld{display:block;font-size:11px;letter-spacing:1px;color:var(--wheat);margin:14px 0 6px;font-family:"Oswald",sans-serif;font-weight:600}
   input[type=text],input[type=date]{width:100%;background:#160a09;border:1px solid #3a1210;border-radius:9px;color:var(--paper);font-size:16px;padding:12px;font-family:inherit}
   input:focus{outline:none;border-color:var(--red)}
   .typesel{display:flex;gap:8px}
@@ -81,7 +81,7 @@
   .typesel button[data-sel="panfletada"].active{background:var(--red);border-color:#ffb3ab;color:#fff}
   .typesel button[data-sel="agendada"].active{background:rgba(227,178,60,.15);border-color:var(--wheat);color:var(--wheat)}
   .actions{display:flex;gap:10px;margin-top:20px}
-  .btn{flex:1;padding:14px;border-radius:10px;border:0;cursor:pointer;font-family:"Oswald",sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;text-transform:uppercase}
+  .btn{flex:1;padding:14px;border-radius:10px;border:0;cursor:pointer;font-family:"Oswald",sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px}
   .btn.primary{background:var(--red);color:#fff}
   .btn.primary:active{background:var(--red-deep)}
   .btn.ghost{background:transparent;color:var(--paper-dim);border:1px solid #3a1210}
@@ -89,7 +89,7 @@
 
   .evlist{margin:6px 0 4px;border-top:1px solid #3a1210}
   .ev{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #2a1210}
-  .ev .tag{font-family:"Oswald",sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:4px 9px;border-radius:20px;flex:0 0 auto}
+  .ev .tag{font-family:"Oswald",sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;padding:4px 9px;border-radius:20px;flex:0 0 auto}
   .ev .tag.panfletada{background:var(--red);color:#fff}
   .ev .tag.agendada{background:rgba(227,178,60,.16);color:var(--wheat);border:1px solid var(--wheat-dim)}
   .ev .d{flex:1;font-size:14px}
@@ -97,7 +97,7 @@
   .ev .d small.overdue{color:var(--red-bright)}
   .ev .x{background:transparent;border:0;color:#7a5a54;font-size:20px;cursor:pointer;padding:4px 8px}
   .ev .x:active{color:var(--red-bright)}
-  .addbtn{width:100%;margin-top:12px;padding:13px;border-radius:10px;cursor:pointer;background:#160a09;border:1px dashed var(--red-deep);color:var(--red-bright);font-family:"Oswald",sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px;text-transform:uppercase}
+  .addbtn{width:100%;margin-top:12px;padding:13px;border-radius:10px;cursor:pointer;background:#160a09;border:1px dashed var(--red-deep);color:var(--red-bright);font-family:"Oswald",sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px}
   .detmeta{display:flex;gap:16px;margin:2px 0 12px;font-size:12px;color:var(--paper-dim)}
   .detmeta b{color:var(--paper);font-family:"Oswald",sans-serif;font-size:15px}
 
@@ -106,7 +106,7 @@
 
   #loading{position:fixed;inset:0;z-index:3000;background:var(--oxblood);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
   #loading .star{width:60px;height:60px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 0 0 3px var(--wheat);animation:pulse 1.1s ease-in-out infinite}
-  #loading p{font-family:"Oswald",sans-serif;letter-spacing:1px;color:var(--paper-dim);font-size:13px;text-transform:uppercase}
+  #loading p{font-family:"Oswald",sans-serif;letter-spacing:1px;color:var(--paper-dim);font-size:13px}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
   .banner{position:fixed;z-index:1400;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 62px);background:#3a1210;border:1px solid var(--red-deep);color:#f0d9d9;border-radius:9px;padding:10px 12px;font-size:12px;display:none}
@@ -240,15 +240,24 @@
   }
 
   /* ---------- map ---------- */
+  var RS_BOUNDS=[[-33.85,-57.75],[-27.0,-49.6]];
   function initMap(){
-    map=L.map("map",{zoomControl:false,attributionControl:true,tap:true}).setView([-30.0,-53.2],7);
+    map=L.map("map",{zoomControl:false,attributionControl:true,tap:true,minZoom:6,maxBounds:[[-34.35,-58.25],[-26.5,-49.1]],maxBoundsViscosity:0.8}).setView([-30.0,-53.2],7);
     L.control.zoom({position:"bottomright"}).addTo(map);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
-      subdomains:"abcd",maxZoom:20,attribution:'&copy; OpenStreetMap &copy; CARTO'
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",{
+      maxZoom:16,attribution:'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
     }).addTo(map);
-    map.fitBounds([[-33.85,-57.75],[-27.0,-49.6]]);
+    map.fitBounds(RS_BOUNDS);
     markerLayer=L.layerGroup().addTo(map);
     map.on("click",function(e){ openForm({mode:"new",lat:e.latlng.lat,lng:e.latlng.lng}); setArmed(false); });
+    fetch("vendor/rs.geojson").then(function(r){return r.json();}).then(function(rs){
+      L.geoJSON(rs,{style:{color:"#e3b23c",weight:2,fillOpacity:0}}).addTo(map);
+      var world=[[85,-180],[85,180],[-85,180],[-85,-180]];
+      var holes=rs.geometry.coordinates.map(function(poly){
+        return poly[0].map(function(c){return [c[1],c[0]];});
+      });
+      L.polygon([world].concat(holes),{stroke:false,fillColor:"#0e0605",fillOpacity:0.82,interactive:false}).addTo(map);
+    }).catch(function(){});
   }
 
   function pinIcon(p){
@@ -288,15 +297,15 @@
     var data=ev?ev.data:todayISO();
     var pessoa=ev?(ev.pessoa||""):"";
     var rua=p?p.rua:"";
-    var title,showRua,showType;
-    if(opts.mode==="new"){ title="Nova rua"; showRua=true; showType=true; }
-    else if(opts.mode==="addEvent"){ title="Registrar panfletagem"; showRua=false; showType=true; }
-    else if(opts.mode==="editEvent"){ title="Editar registro"; showRua=false; showType=true; }
-    else { title="Renomear rua"; showRua=true; showType=false; }
+    var title,showRuaInput,showCoord,showType;
+    if(opts.mode==="new"){ title="Nova rua"; showRuaInput=false; showCoord=true; showType=true; }
+    else if(opts.mode==="addEvent"){ title="Registrar panfletagem"; showRuaInput=false; showCoord=false; showType=true; }
+    else if(opts.mode==="editEvent"){ title="Editar registro"; showRuaInput=false; showCoord=false; showType=true; }
+    else { title="Renomear rua"; showRuaInput=true; showCoord=false; showType=false; }
 
     var h='<div class="grab"></div><h3>'+title+'</h3>';
-    h+='<div class="coord">'+(showRua?("Ponto: "+opts.lat.toFixed(5)+", "+opts.lng.toFixed(5)):escapeHtml(rua))+'</div>';
-    if(showRua){ h+='<label class="fld">Nome da rua / bairro (opcional)</label><input type="text" id="f_rua" placeholder="Ex.: Av. Borges de Medeiros" value="'+escapeHtml(rua)+'">'; }
+    h+='<div class="coord">'+(showCoord?("Ponto: "+opts.lat.toFixed(5)+", "+opts.lng.toFixed(5)+" — o nome da rua é identificado automaticamente"):escapeHtml(rua))+'</div>';
+    if(showRuaInput){ h+='<label class="fld">Nome da rua / bairro</label><input type="text" id="f_rua" placeholder="Ex.: Av. Borges de Medeiros" value="'+escapeHtml(rua)+'">'; }
     if(showType){
       h+='<label class="fld">Situação</label><div class="typesel" id="f_type">';
       h+='<button type="button" data-sel="panfletada" class="'+(tipo==="panfletada"?"active":"")+'"><span class="em">&#9873;</span>Já panfletei</button>';
@@ -322,6 +331,16 @@
     document.getElementById("f_save").addEventListener("click",function(){ submitForm(cur); });
   }
 
+  async function lookupRua(lat,lng){
+    try{
+      var r=await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="+lat+"&lon="+lng+"&zoom=17&addressdetails=1");
+      if(!r.ok) return "Rua sem nome";
+      var d=await r.json();
+      var a=d.address||{};
+      return a.road||a.pedestrian||a.residential||a.neighbourhood||a.suburb||"Rua sem nome";
+    }catch(e){ return "Rua sem nome"; }
+  }
+
   async function submitForm(tipo){
     var o=formState;
     var ruaEl=document.getElementById("f_rua"), dataEl=document.getElementById("f_data"), pessoaEl=document.getElementById("f_pessoa");
@@ -331,7 +350,9 @@
     if(dataEl && !data){ toast("Escolha uma data."); return; }
     try{
       if(o.mode==="new"){
-        await store.insert({ ponto_id:uid(), rua:rua||"Rua sem nome", lat:o.lat, lng:o.lng, tipo:tipo, data:data, pessoa:pessoa||null });
+        toast("Identificando a rua…");
+        var ruaAuto=await lookupRua(o.lat,o.lng);
+        await store.insert({ ponto_id:uid(), rua:ruaAuto, lat:o.lat, lng:o.lng, tipo:tipo, data:data, pessoa:pessoa||null });
         toast(tipo==="panfletada"?"Rua marcada como panfletada.":"Panfletagem agendada.");
       }else if(o.mode==="addEvent"){
         var p=points.find(function(x){return x.id===o.pointId;});
