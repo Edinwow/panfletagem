@@ -36,14 +36,8 @@
   .leaflet-bar a:hover{background:#301715}
 
 
-  .panel{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:230px;max-width:calc(100vw - 24px);
-    background:linear-gradient(180deg,var(--panel),var(--oxblood-2));border:1px solid var(--panel-edge);border-left:4px solid var(--red);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:12px}
-  .hintline{margin-top:9px;padding-top:9px;border-top:1px solid #3a1210;font-size:11px;color:var(--paper-dim)}
-  .stat{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--paper-dim)}
-  .stat b{font-family:"Oswald",sans-serif;font-size:15px;color:var(--paper)}
-  .stat.n-done b{color:var(--red-bright)}
 
-  .locate{position:fixed;z-index:1100;right:16px;bottom:calc(env(safe-area-inset-bottom) + 92px);width:52px;height:52px;border-radius:50%;border:1px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:22px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+  .locate{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:52px;height:52px;border-radius:50%;border:1px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:22px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
   .cancelsel{position:fixed;z-index:1100;left:50%;top:calc(env(safe-area-inset-top) + 110px);transform:translateX(-50%);white-space:nowrap;background:var(--panel);color:var(--paper);border:1px solid var(--red-deep);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:9px 18px;border-radius:20px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)}
   .cancelsel:active{background:#301715}
   .locate:active{transform:scale(.94)}
@@ -92,7 +86,6 @@
 
   @media (min-width:760px){
     header h1{font-size:22px}header .sub{font-size:12px}
-    .panel{width:250px}
     .sheet{left:auto;right:24px;bottom:24px;width:420px;border-radius:16px;border-top:0;border-left:4px solid var(--red);transform:translateX(130%)}
     .sheet.open{transform:translateX(0)}
     .grab{display:none}
@@ -115,12 +108,6 @@
 
 <div class="hint" id="hint">Toque nas ruas para marcar</div>
 <div class="banner" id="banner"></div>
-
-<div class="panel" id="panel">
-  <div class="stat n-done"><span>Ruas panfletadas</span><b id="cDone">0</b></div>
-  <div class="stat"><span>Total de panfletagens</span><b id="cTotal">0</b></div>
-  <div class="hintline">Ruas em vermelho já foram panfletadas &mdash; quanto mais escura, mais vezes.</div>
-</div>
 
 <button class="locate" id="locate" title="Minha localização">&#9678;</button>
 <button class="cancelsel" id="cancelSel" style="display:none">Cancelar seleção</button>
@@ -168,7 +155,7 @@
 
   /* ---------- state ---------- */
   var rows=[], points=[];
-  var map, streetLayer, candidateLayer;
+  var map, streetLayer, candidateLayer, userMarker=null;
   var selected={};
   var SELECT_MIN_ZOOM=14;
 
@@ -245,10 +232,6 @@
   }
 
   function render(){
-    var done=0,total=0;
-    points.forEach(function(p){ var d=countDone(p); if(d>0)done++; total+=d; });
-    document.getElementById("cDone").textContent=done;
-    document.getElementById("cTotal").textContent=total;
     streetLayer.clearLayers();
     points.filter(visible).forEach(function(p){
       if(!p.geom || p.geom.length<2) return;
@@ -482,7 +465,17 @@
     selected={};
     updateHint();
   });
+  function startLocationTracking(){
+    if(!navigator.geolocation) return;
+    navigator.geolocation.watchPosition(function(pos){
+      var ll=[pos.coords.latitude,pos.coords.longitude];
+      if(!userMarker){ userMarker=L.circleMarker(ll,{radius:9,color:"#fff",weight:3,fillColor:"#2f8fff",fillOpacity:1,pane:"markerPane"}).addTo(map); }
+      else { userMarker.setLatLng(ll); }
+    }, function(){}, {enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+  }
+
   document.getElementById("locate").addEventListener("click",function(){
+    if(userMarker){ map.setView(userMarker.getLatLng(),16); return; }
     if(!navigator.geolocation){ toast("Localização não suportada."); return; }
     toast("Localizando\u2026");
     navigator.geolocation.getCurrentPosition(function(pos){ map.setView([pos.coords.latitude,pos.coords.longitude],16); },
@@ -492,6 +485,7 @@
   /* ---------- boot ---------- */
   async function boot(){
     initMap();
+    startLocationTracking();
     if(!ONLINE){
       var b=document.getElementById("banner");
       b.style.display="block";
