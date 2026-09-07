@@ -36,6 +36,8 @@
   .leaflet-control-attribution a{color:#8a6f56!important}
   .leaflet-bar a{background:var(--panel);color:var(--paper);border-color:var(--panel-edge)!important}
   .leaflet-bar a:hover{background:#f1e7da}
+  .landmark-dot{width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--red);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.35);border:2px solid #fff}
+  .landmark-dot span{transform:rotate(45deg);color:#fff;font-size:16px}
 
 
 
@@ -208,6 +210,9 @@
     map.createPane("streetPane"); map.getPane("streetPane").style.zIndex=420;
     streetLayer=L.layerGroup().addTo(map);
     candidateLayer=L.layerGroup().addTo(map);
+    var landmarkIcon=L.divIcon({className:"landmark-pin",html:'<div class="landmark-dot"><span>&#9773;</span></div>',iconSize:[34,34],iconAnchor:[17,34]});
+    L.marker([-30.0385,-51.2232],{icon:landmarkIcon,pane:"markerPane"}).addTo(map)
+      .bindTooltip("Comitê Central — Rua da República, 359",{direction:"top",offset:[0,-32]});
     var moveTimer;
     map.on("moveend",function(){ clearTimeout(moveTimer); moveTimer=setTimeout(updateStreets,250); });
     map.on("click",function(e){
