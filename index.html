@@ -13,9 +13,10 @@
 <style>
   :root{
     --paper:#2a1a15;--paper-dim:#7a6a5c;
-    --oxblood:#f6f1ea;--oxblood-2:#efe7db;--panel:#ffffff;--panel-edge:#e3d5c3;
+    --oxblood:#f6f1ea;--oxblood-2:#efe7db;--panel:#ffffff;--panel-edge:#d8c6ae;
     --red:#d61f1f;--red-bright:#ff4b3e;--red-deep:#8f1010;
     --wheat:#9c6b0c;--wheat-dim:#7a5416;
+    --banner:#7c5cbf;--banner-deep:#5c4291;
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
@@ -29,6 +30,8 @@
   header h1{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;letter-spacing:.5px;margin:0;color:var(--paper)}
   header h1 b{color:var(--red-bright)}
   header .sub{font-size:11px;color:var(--paper-dim);margin-top:3px;letter-spacing:.3px}
+  header .kpi{pointer-events:auto;margin-left:auto;font-size:10.5px;color:var(--paper-dim);background:rgba(255,255,255,.6);border:1px solid var(--panel-edge);border-radius:12px;padding:4px 10px;white-space:nowrap;display:none}
+  header .kpi b{color:var(--paper);font-weight:600}
 
   #map{position:absolute;inset:0;background:#eef0ec}
   .leaflet-container{background:#eef0ec;font-family:inherit}
@@ -41,19 +44,20 @@
 
 
 
-  .locate{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:52px;height:52px;border-radius:50%;border:1px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:22px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+  .locate{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:52px;height:52px;border-radius:50%;border:1.5px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:22px;box-shadow:0 6px 16px rgba(42,26,21,.18)}
   .locate:active{transform:scale(.94)}
 
-  .modebar{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);display:flex;background:var(--panel);border:1px solid var(--panel-edge);border-radius:24px;box-shadow:0 6px 18px rgba(0,0,0,.25);overflow:hidden}
-  .modebar button{border:0;background:transparent;color:var(--paper-dim);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.3px;padding:10px 18px;cursor:pointer;white-space:nowrap}
+  .modebar{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);display:flex;background:var(--panel);border:1.5px solid var(--panel-edge);border-radius:24px;box-shadow:0 6px 18px rgba(42,26,21,.18);overflow:hidden}
+  .modebar button{border:0;border-left:1px solid var(--panel-edge);background:transparent;color:var(--paper-dim);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.3px;padding:10px 18px;cursor:pointer;white-space:nowrap}
+  .modebar button:first-child{border-left:0}
   .modebar button[data-mode="panfletagem"].active{background:var(--red);color:#fff}
-  .modebar button[data-mode="windbanner"].active{background:#2f8fff;color:#fff}
+  .modebar button[data-mode="windbanner"].active{background:var(--banner);color:#fff}
 
-  .cancelsel{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 110px);transform:translateX(-50%);white-space:nowrap;background:var(--panel);color:var(--paper);border:1px solid var(--red-deep);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:9px 18px;border-radius:20px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  .cancelsel{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 110px);transform:translateX(-50%);white-space:nowrap;background:var(--panel);color:var(--paper);border:1.5px solid var(--red-deep);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:9px 18px;border-radius:20px;cursor:pointer;box-shadow:0 6px 18px rgba(42,26,21,.25)}
   .cancelsel:active{background:#f1e7da}
 
-  .hint{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 60px);transform:translateX(-50%);white-space:nowrap;background:var(--wheat);color:#fff;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:8px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.25);display:none}
-  .hint.actionable{background:var(--red);color:#fff;cursor:pointer}
+  .hint{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 60px);transform:translateX(-50%);white-space:nowrap;background:rgba(255,255,255,.92);color:var(--paper-dim);font-family:"Oswald",sans-serif;font-weight:500;font-size:11.5px;letter-spacing:.3px;padding:6px 14px;border-radius:16px;border:1px solid var(--panel-edge);box-shadow:0 3px 10px rgba(42,26,21,.12);display:none}
+  .hint.actionable{background:var(--red);color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border:0;box-shadow:0 6px 18px rgba(42,26,21,.25);cursor:pointer}
 
   .scrim{position:fixed;inset:0;z-index:1500;background:rgba(20,12,8,.4);display:none;backdrop-filter:blur(2px)}
   .sheet{position:fixed;z-index:1600;left:0;right:0;bottom:0;background:linear-gradient(180deg,var(--panel),var(--oxblood-2));border-top:4px solid var(--red);border-radius:16px 16px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.25);padding:14px 16px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(110%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:86vh;overflow:auto}
@@ -112,6 +116,7 @@
     <h1><b>Panfletagem</b></h1>
     <div class="sub">Humberto Matos</div>
   </div>
+  <div class="kpi" id="kpiKm"></div>
 </header>
 
 <div id="map"></div>
@@ -123,7 +128,7 @@
 <button class="cancelsel" id="cancelSel" style="display:none">Cancelar seleção</button>
 <div class="modebar" id="modebar">
   <button data-mode="panfletagem" id="modePanfletagem">Panfletagem</button>
-  <button data-mode="windbanner" id="modeWindbanner">Wind Banner</button>
+  <button data-mode="windbanner" id="modeWindbanner" style="display:none">Wind Banner</button>
 </div>
 
 <div class="scrim" id="scrim"></div>
@@ -188,8 +193,8 @@
 
   /* ---------- state ---------- */
   var rows=[], points=[], windBanners=[];
-  var map, streetLayer, candidateLayer, bannerLayer, userMarker=null;
-  var selected={};
+  var map, streetLayer, candidateLayer, bannerLayer, pendingBannerLayer, userMarker=null;
+  var selected={}, pendingBanners={};
   var SELECT_MIN_ZOOM=14;
   var activeMode=null; // null | "panfletagem" | "windbanner"
 
@@ -233,10 +238,18 @@
     try{ windBanners = await bannerStore.selectAll(); renderBanners(); }catch(e){}
   }
 
+  function bannerRadiusForZoom(){
+    var z=map.getZoom();
+    if(z>=16) return {radius:6,opacity:0.95};
+    if(z>=SELECT_MIN_ZOOM) return {radius:4.5,opacity:0.75};
+    return {radius:3,opacity:0.5};
+  }
+
   function renderBanners(){
     bannerLayer.clearLayers();
+    var st=bannerRadiusForZoom();
     windBanners.forEach(function(b){
-      var mk=L.circleMarker([b.lat,b.lng],{radius:6,weight:2,color:"#fff",fillColor:"#0ea5a5",fillOpacity:0.95,pane:"streetPane"});
+      var mk=L.circleMarker([b.lat,b.lng],{radius:st.radius,weight:1.5,color:"#fff",fillColor:"#7c5cbf",fillOpacity:st.opacity,pane:"streetPane"});
       mk.on("click",function(ev){
         L.DomEvent.stopPropagation(ev);
         if(activeMode!=="windbanner") return;
@@ -246,11 +259,37 @@
     });
   }
 
-  async function addWindBanner(latlng){
+  function addWindBanner(latlng){
+    var tmpId=uid();
+    var layer=L.circleMarker(latlng,{radius:7,weight:2,color:"#7c5cbf",fillColor:"#fff",fillOpacity:0.5,dashArray:"3 3",pane:"candPane"});
+    layer.on("click",function(ev){ L.DomEvent.stopPropagation(ev); cancelPendingBanner(tmpId); });
+    pendingBannerLayer.addLayer(layer);
+    pendingBanners[tmpId]={id:tmpId,lat:latlng.lat,lng:latlng.lng,layer:layer};
+    updateHint();
+  }
+
+  function cancelPendingBanner(tmpId){
+    if(!pendingBanners[tmpId]) return;
+    pendingBannerLayer.removeLayer(pendingBanners[tmpId].layer);
+    delete pendingBanners[tmpId];
+    updateHint();
+  }
+
+  function clearPendingBanners(){
+    pendingBannerLayer.clearLayers();
+    pendingBanners={};
+    updateHint();
+  }
+
+  async function confirmBanners(){
+    var pts=Object.keys(pendingBanners).map(function(k){return pendingBanners[k];});
+    if(!pts.length) return;
     try{
-      await bannerStore.insert({ lat:latlng.lat, lng:latlng.lng });
+      await Promise.all(pts.map(function(p){ return bannerStore.insert({ lat:p.lat, lng:p.lng }); }));
+      clearPendingBanners();
       await reloadBanners();
-    }catch(e){ toast("Não foi possível adicionar o Wind Banner."); }
+      toast(pts.length>1?"Wind Banners adicionados.":"Wind Banner adicionado.");
+    }catch(e){ toast("Não foi possível salvar os Wind Banners."); }
   }
 
   async function removeWindBanner(id){
@@ -271,11 +310,13 @@
     streetLayer=L.layerGroup().addTo(map);
     candidateLayer=L.layerGroup().addTo(map);
     bannerLayer=L.layerGroup().addTo(map);
+    pendingBannerLayer=L.layerGroup().addTo(map);
     var landmarkIcon=L.divIcon({className:"landmark-pin",html:'<div class="landmark-dot"><span>&#9773;</span></div>',iconSize:[34,34],iconAnchor:[17,34]});
     L.marker([-30.038342866892503,-51.223385800140335],{icon:landmarkIcon,pane:"markerPane"}).addTo(map)
       .bindTooltip("Comitê Central — Rua da República, 359",{direction:"top",offset:[0,-32]});
     var moveTimer;
     map.on("moveend",function(){ clearTimeout(moveTimer); moveTimer=setTimeout(updateStreets,250); });
+    map.on("zoomend",renderBanners);
     map.on("click",function(e){
       if(activeMode==="windbanner"){ addWindBanner(e.latlng); return; }
       if(activeMode!=="panfletagem") return;
@@ -298,8 +339,29 @@
     return "hsl(6,85%,"+light+"%)";
   }
 
+  function haversineKm(a,b){
+    var R=6371, toRad=Math.PI/180;
+    var dLat=(b[0]-a[0])*toRad, dLng=(b[1]-a[1])*toRad;
+    var la1=a[0]*toRad, la2=b[0]*toRad;
+    var h=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+  }
+  function geomKm(geom){
+    var km=0;
+    for(var i=1;i<geom.length;i++) km+=haversineKm(geom[i-1],geom[i]);
+    return km;
+  }
+
   function render(){
     streetLayer.clearLayers();
+    var totalKm=0;
+    points.forEach(function(p){
+      var d=countDone(p);
+      if(d>0 && p.geom && p.geom.length>1) totalKm+=geomKm(p.geom);
+    });
+    var kpi=document.getElementById("kpiKm");
+    if(totalKm>0){ kpi.style.display="block"; kpi.innerHTML="<b>"+totalKm.toFixed(1)+" km</b> panfletados"; }
+    else { kpi.style.display="none"; }
     points.filter(visible).forEach(function(p){
       if(!p.geom || p.geom.length<2) return;
       var style={color:doneColor(countDone(p)),weight:5,opacity:0.9,pane:"streetPane"};
@@ -388,17 +450,18 @@
   function updateHint(){
     var hint=document.getElementById("hint"), cancelBtn=document.getElementById("cancelSel");
     var n=Object.keys(selected).length;
+    var nb=Object.keys(pendingBanners).length;
     hint.classList.remove("actionable");
     cancelBtn.style.display="none";
     if(activeMode==="panfletagem"){
       if(map.getZoom()<SELECT_MIN_ZOOM){ hint.style.display="block"; hint.textContent="Aproxime o mapa para marcar ruas"; return; }
       hint.style.display="block";
-      cancelBtn.style.display=n>0?"block":"none";
-      if(n>0){ hint.textContent="Confirmar "+n+" rua"+(n>1?"s":"")+" selecionada"+(n>1?"s":""); hint.classList.add("actionable"); }
+      if(n>0){ cancelBtn.textContent="Cancelar seleção"; cancelBtn.style.display="block"; hint.textContent="Confirmar "+n+" rua"+(n>1?"s":"")+" selecionada"+(n>1?"s":""); hint.classList.add("actionable"); }
       else { hint.textContent="Toque nas ruas para marcar"; }
     }else if(activeMode==="windbanner"){
       hint.style.display="block";
-      hint.textContent="Toque no mapa para adicionar — toque num ponto para remover";
+      if(nb>0){ cancelBtn.textContent="Cancelar pontos"; cancelBtn.style.display="block"; hint.textContent="Confirmar "+nb+" ponto"+(nb>1?"s":"")+" de Wind Banner"; hint.classList.add("actionable"); }
+      else { hint.textContent="Toque no mapa para marcar um ponto"; }
     }else{
       hint.style.display="none";
     }
@@ -535,17 +598,26 @@
   }
 
   /* ---------- controls ---------- */
-  document.getElementById("hint").addEventListener("click",function(){ if(Object.keys(selected).length>0) openConfirmForm(); });
+  document.getElementById("hint").addEventListener("click",function(){
+    if(activeMode==="panfletagem" && Object.keys(selected).length>0) openConfirmForm();
+    else if(activeMode==="windbanner" && Object.keys(pendingBanners).length>0) confirmBanners();
+  });
   document.getElementById("cancelSel").addEventListener("click",function(){
-    Object.keys(selected).forEach(function(id){ candidateLayer.removeLayer(selected[id].layer); });
-    selected={};
-    updateHint();
+    if(activeMode==="windbanner") clearPendingBanners();
+    else{
+      Object.keys(selected).forEach(function(id){ candidateLayer.removeLayer(selected[id].layer); });
+      selected={};
+      updateHint();
+    }
   });
   function setMode(mode){
     if(activeMode===mode) mode=null;
     if(activeMode==="panfletagem" && mode!=="panfletagem"){
       Object.keys(selected).forEach(function(id){ candidateLayer.removeLayer(selected[id].layer); });
       selected={};
+    }
+    if(activeMode==="windbanner" && mode!=="windbanner"){
+      clearPendingBanners();
     }
     activeMode=mode;
     document.querySelectorAll("#modebar button").forEach(function(b){
