@@ -68,7 +68,6 @@
   .btn.primary{background:var(--red);color:#fff}
   .btn.primary:active{background:var(--red-deep)}
   .btn.ghost{background:transparent;color:var(--paper-dim);border:1px solid var(--panel-edge)}
-  .btn.danger{background:transparent;color:var(--red-bright);border:1px solid var(--red-deep)}
 
   .evlist{margin:6px 0 4px;border-top:1px solid var(--panel-edge)}
   .ev{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--panel-edge)}
@@ -148,16 +147,14 @@
     store = {
       selectAll: async function(){ var r=await fetch(API+"?select=*&order=created_at.asc",{headers:H()}); if(!r.ok) throw new Error(r.status); return r.json(); },
       insert: async function(row){ var r=await fetch(API,{method:"POST",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(row)}); if(!r.ok) throw new Error(r.status); },
-      deleteById: async function(id){ var r=await fetch(API+"?id=eq."+enc(id),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); },
-      deletePonto: async function(pid){ var r=await fetch(API+"?ponto_id=eq."+enc(pid),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); }
+      deleteById: async function(id){ var r=await fetch(API+"?id=eq."+enc(id),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); }
     };
   }else{
     var localRows=[];
     store = {
       selectAll: async function(){ return localRows.slice(); },
       insert: async function(row){ localRows.push(Object.assign({id:uid(),created_at:new Date().toISOString()},row)); },
-      deleteById: async function(id){ localRows=localRows.filter(function(r){return r.id!==id;}); },
-      deletePonto: async function(pid){ localRows=localRows.filter(function(r){return r.ponto_id!==pid;}); }
+      deleteById: async function(id){ localRows=localRows.filter(function(r){return r.id!==id;}); }
     };
   }
 
@@ -536,16 +533,9 @@
         +'<button class="x" data-del="'+e.id+'" title="Remover">&times;</button></div>';
     });
     h+='</div><button class="addbtn" id="d_add">+ Registrar panfletagem aqui</button>';
-    h+='<div class="actions"><button class="btn danger" id="d_del">Excluir rua</button></div>';
     openSheet(h);
 
     document.getElementById("d_add").addEventListener("click",function(){ openForm({mode:"addEvent",pointId:p.id,tipo:"panfletada"}); });
-    document.getElementById("d_del").addEventListener("click",async function(){
-      if(confirm("Excluir esta rua e todas as suas panfletagens? Isso afeta todos.")){
-        try{ await store.deletePonto(p.ponto_id); closeSheet(); await reloadAndRender(); toast("Rua removida."); }
-        catch(e){ toast("Erro ao excluir."); }
-      }
-    });
     sheet.querySelectorAll("[data-del]").forEach(function(b){
       b.addEventListener("click",async function(ev){
         ev.stopPropagation();
