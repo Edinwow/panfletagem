@@ -75,7 +75,6 @@
   .ev .tag{font-family:"Oswald",sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;padding:4px 9px;border-radius:20px;flex:0 0 auto}
   .ev .tag.panfletada{background:var(--red);color:#fff}
   .ev .d{flex:1;font-size:14px}
-  .ev .d small{display:block;color:var(--paper-dim);font-size:11px;margin-top:2px}
   .ev .x{background:transparent;border:0;color:#9c8676;font-size:20px;cursor:pointer;padding:4px 8px}
   .ev .x:active{color:var(--red-bright)}
   .addbtn{width:100%;margin-top:12px;padding:13px;border-radius:10px;cursor:pointer;background:#fbeae6;border:1px dashed var(--red-deep);color:var(--red-deep);font-family:"Oswald",sans-serif;font-weight:700;font-size:14px;letter-spacing:.5px}
@@ -149,8 +148,6 @@
     store = {
       selectAll: async function(){ var r=await fetch(API+"?select=*&order=created_at.asc",{headers:H()}); if(!r.ok) throw new Error(r.status); return r.json(); },
       insert: async function(row){ var r=await fetch(API,{method:"POST",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(row)}); if(!r.ok) throw new Error(r.status); },
-      updateById: async function(id,patch){ var r=await fetch(API+"?id=eq."+enc(id),{method:"PATCH",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(patch)}); if(!r.ok) throw new Error(r.status); },
-      updateByPonto: async function(pid,patch){ var r=await fetch(API+"?ponto_id=eq."+enc(pid),{method:"PATCH",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(patch)}); if(!r.ok) throw new Error(r.status); },
       deleteById: async function(id){ var r=await fetch(API+"?id=eq."+enc(id),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); },
       deletePonto: async function(pid){ var r=await fetch(API+"?ponto_id=eq."+enc(pid),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); }
     };
@@ -159,8 +156,6 @@
     store = {
       selectAll: async function(){ return localRows.slice(); },
       insert: async function(row){ localRows.push(Object.assign({id:uid(),created_at:new Date().toISOString()},row)); },
-      updateById: async function(id,patch){ var x=localRows.find(function(r){return r.id===id;}); if(x) Object.assign(x,patch); },
-      updateByPonto: async function(pid,patch){ localRows.filter(function(r){return r.ponto_id===pid;}).forEach(function(r){Object.assign(r,patch);}); },
       deleteById: async function(id){ localRows=localRows.filter(function(r){return r.id!==id;}); },
       deletePonto: async function(pid){ localRows=localRows.filter(function(r){return r.ponto_id!==pid;}); }
     };
@@ -499,22 +494,12 @@
   function openForm(opts){
     formState=opts;
     var p=opts.pointId?points.find(function(x){return x.id===opts.pointId;}):null;
-    var ev=opts.eventId&&p?p.eventos.find(function(x){return x.id===opts.eventId;}):null;
-    var data=ev?ev.data:todayISO();
-    var pessoa=ev?(ev.pessoa||""):"";
     var rua=p?p.rua:"";
-    var title,showRuaInput,showType;
-    if(opts.mode==="addEvent"){ title="Registrar panfletagem"; showRuaInput=false; showType=true; }
-    else if(opts.mode==="editEvent"){ title="Editar registro"; showRuaInput=false; showType=true; }
-    else { title="Renomear rua"; showRuaInput=true; showType=false; }
 
-    var h='<div class="grab"></div><h3>'+title+'</h3>';
+    var h='<div class="grab"></div><h3>Registrar panfletagem</h3>';
     h+='<div class="coord">'+escapeHtml(rua)+'</div>';
-    if(showRuaInput){ h+='<label class="fld">Nome da rua / bairro</label><input type="text" id="f_rua" placeholder="Ex.: Av. Borges de Medeiros" value="'+escapeHtml(rua)+'">'; }
-    if(showType){
-      h+='<label class="fld">Data em que panfletei</label><input type="date" id="f_data" value="'+data+'">';
-      h+='<label class="fld">Quem panfletou (opcional)</label><input type="text" id="f_pessoa" placeholder="Ex.: Maria" value="'+escapeHtml(pessoa)+'">';
-    }
+    h+='<label class="fld">Data em que panfletei</label><input type="date" id="f_data" value="'+todayISO()+'">';
+    h+='<label class="fld">Quem panfletou (opcional)</label><input type="text" id="f_pessoa" placeholder="Ex.: Maria" value="">';
     h+='<div class="actions"><button class="btn ghost" id="f_cancel">Cancelar</button><button class="btn primary" id="f_save">Salvar</button></div>';
     openSheet(h);
 
@@ -524,24 +509,14 @@
 
   async function submitForm(){
     var o=formState;
-    var ruaEl=document.getElementById("f_rua"), dataEl=document.getElementById("f_data"), pessoaEl=document.getElementById("f_pessoa");
-    var rua=ruaEl?ruaEl.value.trim():null;
-    var data=dataEl?dataEl.value:null;
-    var pessoa=pessoaEl?pessoaEl.value.trim():null;
-    if(dataEl && !data){ toast("Escolha uma data."); return; }
+    var dataEl=document.getElementById("f_data"), pessoaEl=document.getElementById("f_pessoa");
+    var data=dataEl.value;
+    var pessoa=pessoaEl.value.trim();
+    if(!data){ toast("Escolha uma data."); return; }
     try{
-      if(o.mode==="addEvent"){
-        var p=points.find(function(x){return x.id===o.pointId;});
-        await store.insert({ ponto_id:p.ponto_id, rua:p.rua, lat:p.lat, lng:p.lng, tipo:"panfletada", data:data, pessoa:pessoa||null });
-        toast("Mais uma panfletagem registrada.");
-      }else if(o.mode==="editEvent"){
-        await store.updateById(o.eventId,{ data:data, pessoa:pessoa||null });
-        toast("Registro atualizado.");
-      }else if(o.mode==="editPoint"){
-        var p2=points.find(function(x){return x.id===o.pointId;});
-        await store.updateByPonto(p2.ponto_id,{ rua:rua||"Rua sem nome" });
-        toast("Nome atualizado.");
-      }
+      var p=points.find(function(x){return x.id===o.pointId;});
+      await store.insert({ ponto_id:p.ponto_id, rua:p.rua, lat:p.lat, lng:p.lng, tipo:"panfletada", data:data, pessoa:pessoa||null });
+      toast("Mais uma panfletagem registrada.");
       closeSheet();
       await reloadAndRender();
     }catch(e){ toast("Não foi possível salvar. Tente de novo."); }
@@ -557,15 +532,14 @@
     h+='<div class="evlist">';
     evs.forEach(function(e){
       h+='<div class="ev"><span class="tag '+e.tipo+'">Feita</span>'
-        +'<span class="d" data-edit="'+e.id+'">'+fmt(e.data)+(e.pessoa?" &middot; "+escapeHtml(e.pessoa):"")+'<small>toque para editar</small></span>'
+        +'<span class="d">'+fmt(e.data)+'</span>'
         +'<button class="x" data-del="'+e.id+'" title="Remover">&times;</button></div>';
     });
     h+='</div><button class="addbtn" id="d_add">+ Registrar panfletagem aqui</button>';
-    h+='<div class="actions"><button class="btn ghost" id="d_rename">Renomear</button><button class="btn danger" id="d_del">Excluir rua</button></div>';
+    h+='<div class="actions"><button class="btn danger" id="d_del">Excluir rua</button></div>';
     openSheet(h);
 
     document.getElementById("d_add").addEventListener("click",function(){ openForm({mode:"addEvent",pointId:p.id,tipo:"panfletada"}); });
-    document.getElementById("d_rename").addEventListener("click",function(){ openForm({mode:"editPoint",pointId:p.id}); });
     document.getElementById("d_del").addEventListener("click",async function(){
       if(confirm("Excluir esta rua e todas as suas panfletagens? Isso afeta todos.")){
         try{ await store.deletePonto(p.ponto_id); closeSheet(); await reloadAndRender(); toast("Rua removida."); }
@@ -582,9 +556,6 @@
           if(still) openDetail(p.id); else closeSheet();
         }catch(e){ toast("Erro ao remover registro."); }
       });
-    });
-    sheet.querySelectorAll("[data-edit]").forEach(function(el){
-      el.addEventListener("click",function(){ openForm({mode:"editEvent",pointId:p.id,eventId:el.getAttribute("data-edit")}); });
     });
   }
 
