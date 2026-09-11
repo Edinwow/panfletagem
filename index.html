@@ -42,11 +42,17 @@
 
 
   .locate{position:fixed;z-index:1100;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);width:52px;height:52px;border-radius:50%;border:1px solid var(--panel-edge);cursor:pointer;background:var(--panel);color:var(--paper);font-size:22px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
-  .cancelsel{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 64px);transform:translateX(-50%);white-space:nowrap;background:var(--panel);color:var(--paper);border:1px solid var(--red-deep);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:9px 18px;border-radius:20px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)}
-  .cancelsel:active{background:#f1e7da}
   .locate:active{transform:scale(.94)}
 
-  .hint{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);white-space:nowrap;background:var(--wheat);color:#fff;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:8px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.25);display:none}
+  .modebar{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);display:flex;background:var(--panel);border:1px solid var(--panel-edge);border-radius:24px;box-shadow:0 6px 18px rgba(0,0,0,.25);overflow:hidden}
+  .modebar button{border:0;background:transparent;color:var(--paper-dim);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.3px;padding:10px 18px;cursor:pointer;white-space:nowrap}
+  .modebar button[data-mode="panfletagem"].active{background:var(--red);color:#fff}
+  .modebar button[data-mode="windbanner"].active{background:#2f8fff;color:#fff}
+
+  .cancelsel{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 110px);transform:translateX(-50%);white-space:nowrap;background:var(--panel);color:var(--paper);border:1px solid var(--red-deep);font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:9px 18px;border-radius:20px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  .cancelsel:active{background:#f1e7da}
+
+  .hint{position:fixed;z-index:1100;left:50%;bottom:calc(env(safe-area-inset-bottom) + 60px);transform:translateX(-50%);white-space:nowrap;background:var(--wheat);color:#fff;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.4px;padding:8px 16px;border-radius:20px;box-shadow:0 6px 18px rgba(0,0,0,.25);display:none}
   .hint.actionable{background:var(--red);color:#fff;cursor:pointer}
 
   .scrim{position:fixed;inset:0;z-index:1500;background:rgba(20,12,8,.4);display:none;backdrop-filter:blur(2px)}
@@ -110,11 +116,15 @@
 
 <div id="map"></div>
 
-<div class="hint" id="hint">Toque nas ruas para marcar</div>
+<div class="hint" id="hint" style="display:none"></div>
 <div class="banner" id="banner"></div>
 
 <button class="locate" id="locate" title="Minha localização">&#9678;</button>
 <button class="cancelsel" id="cancelSel" style="display:none">Cancelar seleção</button>
+<div class="modebar" id="modebar">
+  <button data-mode="panfletagem" id="modePanfletagem">Panfletagem</button>
+  <button data-mode="windbanner" id="modeWindbanner">Wind Banner</button>
+</div>
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
@@ -132,6 +142,7 @@
   var CFG = window.PANFLETO_CONFIG || {};
   var ONLINE = !!(CFG.url && CFG.key);
   var API = ONLINE ? CFG.url.replace(/\/+$/,"") + "/rest/v1/panfletagens" : null;
+  var BANNERS_API = ONLINE ? CFG.url.replace(/\/+$/,"") + "/rest/v1/wind_banners" : null;
   function H(extra){
     return Object.assign({ "apikey":CFG.key, "Authorization":"Bearer "+CFG.key, "Content-Type":"application/json" }, extra||{});
   }
@@ -159,11 +170,28 @@
     };
   }
 
+  var bannerStore;
+  if(ONLINE){
+    bannerStore = {
+      selectAll: async function(){ var r=await fetch(BANNERS_API+"?select=*&order=created_at.asc",{headers:H()}); if(!r.ok) throw new Error(r.status); return r.json(); },
+      insert: async function(row){ var r=await fetch(BANNERS_API,{method:"POST",headers:H({"Prefer":"return=minimal"}),body:JSON.stringify(row)}); if(!r.ok) throw new Error(r.status); },
+      deleteById: async function(id){ var r=await fetch(BANNERS_API+"?id=eq."+enc(id),{method:"DELETE",headers:H()}); if(!r.ok) throw new Error(r.status); }
+    };
+  }else{
+    var localBanners=[];
+    bannerStore = {
+      selectAll: async function(){ return localBanners.slice(); },
+      insert: async function(row){ localBanners.push(Object.assign({id:uid(),created_at:new Date().toISOString()},row)); },
+      deleteById: async function(id){ localBanners=localBanners.filter(function(r){return r.id!==id;}); }
+    };
+  }
+
   /* ---------- state ---------- */
-  var rows=[], points=[];
-  var map, streetLayer, candidateLayer, userMarker=null;
+  var rows=[], points=[], windBanners=[];
+  var map, streetLayer, candidateLayer, bannerLayer, userMarker=null;
   var selected={};
   var SELECT_MIN_ZOOM=14;
+  var activeMode=null; // null | "panfletagem" | "windbanner"
 
   /* ---------- helpers ---------- */
   function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
@@ -201,6 +229,38 @@
     }
   }
 
+  async function reloadBanners(){
+    try{ windBanners = await bannerStore.selectAll(); renderBanners(); }catch(e){}
+  }
+
+  function renderBanners(){
+    bannerLayer.clearLayers();
+    windBanners.forEach(function(b){
+      var mk=L.circleMarker([b.lat,b.lng],{radius:6,weight:2,color:"#fff",fillColor:"#0ea5a5",fillOpacity:0.95,pane:"streetPane"});
+      mk.on("click",function(ev){
+        L.DomEvent.stopPropagation(ev);
+        if(activeMode!=="windbanner") return;
+        removeWindBanner(b.id);
+      });
+      bannerLayer.addLayer(mk);
+    });
+  }
+
+  async function addWindBanner(latlng){
+    try{
+      await bannerStore.insert({ lat:latlng.lat, lng:latlng.lng });
+      await reloadBanners();
+    }catch(e){ toast("Não foi possível adicionar o Wind Banner."); }
+  }
+
+  async function removeWindBanner(id){
+    try{
+      await bannerStore.deleteById(id);
+      await reloadBanners();
+      toast("Wind Banner removido.");
+    }catch(e){ toast("Não foi possível remover o Wind Banner."); }
+  }
+
   /* ---------- map ---------- */
   function initMap(){
     map=L.map("map",{zoomControl:false,attributionControl:true,tap:true,preferCanvas:true,minZoom:6,maxZoom:19,maxBounds:[[-34.35,-58.25],[-26.5,-49.1]],maxBoundsViscosity:0.8}).setView([-30.0346,-51.2177],13);
@@ -210,12 +270,15 @@
     map.createPane("streetPane"); map.getPane("streetPane").style.zIndex=420;
     streetLayer=L.layerGroup().addTo(map);
     candidateLayer=L.layerGroup().addTo(map);
+    bannerLayer=L.layerGroup().addTo(map);
     var landmarkIcon=L.divIcon({className:"landmark-pin",html:'<div class="landmark-dot"><span>&#9773;</span></div>',iconSize:[34,34],iconAnchor:[17,34]});
-    L.marker([-30.0385,-51.2232],{icon:landmarkIcon,pane:"markerPane"}).addTo(map)
+    L.marker([-30.038342866892503,-51.223385800140335],{icon:landmarkIcon,pane:"markerPane"}).addTo(map)
       .bindTooltip("Comitê Central — Rua da República, 359",{direction:"top",offset:[0,-32]});
     var moveTimer;
     map.on("moveend",function(){ clearTimeout(moveTimer); moveTimer=setTimeout(updateStreets,250); });
     map.on("click",function(e){
+      if(activeMode==="windbanner"){ addWindBanner(e.latlng); return; }
+      if(activeMode!=="panfletagem") return;
       if(map.getZoom()<SELECT_MIN_ZOOM) return;
       var id=findNearestWay(e.latlng);
       if(id) toggleSelect(id);
@@ -325,11 +388,20 @@
   function updateHint(){
     var hint=document.getElementById("hint"), cancelBtn=document.getElementById("cancelSel");
     var n=Object.keys(selected).length;
-    if(map.getZoom()<SELECT_MIN_ZOOM){ hint.style.display="none"; hint.classList.remove("actionable"); cancelBtn.style.display="none"; return; }
-    hint.style.display="block";
-    cancelBtn.style.display=n>0?"block":"none";
-    if(n>0){ hint.textContent="Confirmar "+n+" rua"+(n>1?"s":"")+" selecionada"+(n>1?"s":""); hint.classList.add("actionable"); }
-    else { hint.textContent="Toque nas ruas para marcar"; hint.classList.remove("actionable"); }
+    hint.classList.remove("actionable");
+    cancelBtn.style.display="none";
+    if(activeMode==="panfletagem"){
+      if(map.getZoom()<SELECT_MIN_ZOOM){ hint.style.display="block"; hint.textContent="Aproxime o mapa para marcar ruas"; return; }
+      hint.style.display="block";
+      cancelBtn.style.display=n>0?"block":"none";
+      if(n>0){ hint.textContent="Confirmar "+n+" rua"+(n>1?"s":"")+" selecionada"+(n>1?"s":""); hint.classList.add("actionable"); }
+      else { hint.textContent="Toque nas ruas para marcar"; }
+    }else if(activeMode==="windbanner"){
+      hint.style.display="block";
+      hint.textContent="Toque no mapa para adicionar — toque num ponto para remover";
+    }else{
+      hint.style.display="none";
+    }
   }
 
   function openConfirmForm(){
@@ -469,6 +541,20 @@
     selected={};
     updateHint();
   });
+  function setMode(mode){
+    if(activeMode===mode) mode=null;
+    if(activeMode==="panfletagem" && mode!=="panfletagem"){
+      Object.keys(selected).forEach(function(id){ candidateLayer.removeLayer(selected[id].layer); });
+      selected={};
+    }
+    activeMode=mode;
+    document.querySelectorAll("#modebar button").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-mode")===activeMode);
+    });
+    updateHint();
+  }
+  document.getElementById("modePanfletagem").addEventListener("click",function(){ setMode("panfletagem"); });
+  document.getElementById("modeWindbanner").addEventListener("click",function(){ setMode("windbanner"); });
   function startLocationTracking(){
     if(!navigator.geolocation) return;
     navigator.geolocation.watchPosition(function(pos){
@@ -496,12 +582,13 @@
       b.innerHTML="Modo local (teste): edite <b>config.js</b> com a URL e a chave do Supabase para salvar e compartilhar. Por enquanto nada é gravado.";
     }
     await reloadAndRender();
+    await reloadBanners();
     await updateStreets();
     document.getElementById("loading").style.display="none";
     setTimeout(function(){ map.invalidateSize(); },200);
     if(ONLINE){
-      setInterval(function(){ if(!sheet.classList.contains("open")) reloadAndRender(); },20000);
-      window.addEventListener("focus",function(){ if(!sheet.classList.contains("open")) reloadAndRender(); });
+      setInterval(function(){ if(!sheet.classList.contains("open")){ reloadAndRender(); reloadBanners(); } },20000);
+      window.addEventListener("focus",function(){ if(!sheet.classList.contains("open")){ reloadAndRender(); reloadBanners(); } });
     }
   }
   boot();

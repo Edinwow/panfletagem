@@ -37,3 +37,23 @@ create policy "leitura publica"     on public.panfletagens for select using (tru
 create policy "insercao publica"    on public.panfletagens for insert with check (true);
 create policy "atualizacao publica" on public.panfletagens for update using (true) with check (true);
 create policy "exclusao publica"    on public.panfletagens for delete using (true);
+
+-- ============================================================
+--  Wind Banners — pontos marcados no mapa (independente das ruas)
+-- ============================================================
+create table if not exists public.wind_banners (
+  id          uuid primary key default gen_random_uuid(),
+  lat         double precision not null,
+  lng         double precision not null,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.wind_banners enable row level security;
+
+drop policy if exists "leitura publica banners"  on public.wind_banners;
+drop policy if exists "insercao publica banners" on public.wind_banners;
+drop policy if exists "exclusao publica banners" on public.wind_banners;
+
+create policy "leitura publica banners"  on public.wind_banners for select using (true);
+create policy "insercao publica banners" on public.wind_banners for insert with check (true);
+create policy "exclusao publica banners" on public.wind_banners for delete using (true);
