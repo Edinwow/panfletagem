@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ranking</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#2a1a15;--paper-dim:#7a6a5c;
+    --oxblood:#f6f1ea;--panel:#ffffff;--panel-edge:#d8c6ae;
+    --red:#d61f1f;--red-bright:#ff4b3e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--oxblood);color:var(--paper);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:24px 16px 60px}
+  h1{font-family:"Oswald",sans-serif;font-weight:700;font-size:22px;letter-spacing:.5px;margin:0 0 2px;text-transform:none}
+  h1 b{color:var(--red-bright)}
+  .sub{font-size:12px;color:var(--paper-dim);margin-bottom:22px}
+  .list{max-width:520px;margin:0 auto}
+  .row{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--panel-edge);border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:0 3px 10px rgba(42,26,21,.08)}
+  .pos{font-family:"Oswald",sans-serif;font-weight:700;font-size:15px;color:var(--paper-dim);width:26px;flex:0 0 26px;text-align:center}
+  .row:nth-child(1) .pos{color:var(--red)}
+  .name{flex:1;font-weight:600;font-size:15px}
+  .stats{text-align:right;font-size:12px;color:var(--paper-dim);line-height:1.5}
+  .stats b{display:block;font-family:"Oswald",sans-serif;font-size:16px;color:var(--paper);font-weight:700}
+  .empty,.err{text-align:center;color:var(--paper-dim);font-size:13px;margin-top:40px}
+  .err{color:var(--red)}
+</style>
+</head>
+<body>
+
+<h1>Ranking de <b>Panfletagem</b></h1>
+<div class="sub">Quanto cada pessoa já panfletou</div>
+<div class="list" id="list"><div class="empty">Carregando&hellip;</div></div>
+
+<script src="config.js"></script>
+<script>
+(function(){
+  "use strict";
+  var CFG = window.PANFLETO_CONFIG || {};
+  var ONLINE = !!(CFG.url && CFG.key);
+  var API = ONLINE ? CFG.url.replace(/\/+$/,"") + "/rest/v1/panfletagens" : null;
+
+  function haversineKm(a,b){
+    var R=6371, toRad=Math.PI/180;
+    var dLat=(b[0]-a[0])*toRad, dLng=(b[1]-a[1])*toRad;
+    var la1=a[0]*toRad, la2=b[0]*toRad;
+    var h=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)*Math.sin(dLng/2);
+    return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+  }
+  function geomKm(geom){
+    var km=0;
+    for(var i=1;i<geom.length;i++) km+=haversineKm(geom[i-1],geom[i]);
+    return km;
+  }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+
+  function render(list){
+    var el=document.getElementById("list");
+    if(!list.length){ el.innerHTML='<div class="empty">Nenhuma panfletagem registrada ainda.</div>'; return; }
+    el.innerHTML = list.map(function(p,i){
+      return '<div class="row"><div class="pos">'+(i+1)+'</div>'
+        +'<div class="name">'+escapeHtml(p.nome)+'</div>'
+        +'<div class="stats"><b>'+p.km.toFixed(1)+' km</b>'+p.registros+' rua'+(p.registros===1?"":"s")+'</div></div>';
+    }).join("");
+  }
+
+  async function load(){
+    if(!ONLINE){
+      document.getElementById("list").innerHTML='<div class="err">Site em modo local: configure o config.js para ver o ranking.</div>';
+      return;
+    }
+    try{
+      var r = await fetch(API+"?select=pessoa,geom,tipo&tipo=eq.panfletada", {
+        headers:{ "apikey":CFG.key, "Authorization":"Bearer "+CFG.key }
+      });
+      if(!r.ok) throw new Error(r.status);
+      var rows = await r.json();
+      var stats = {};
+      rows.forEach(function(row){
+        var km = row.geom ? geomKm(row.geom) : 0;
+        var names = (row.pessoa||"").split(",").map(function(s){return s.trim();}).filter(Boolean);
+        if(!names.length) names=["Sem nome"];
+        names.forEach(function(name){
+          if(!stats[name]) stats[name]={nome:name,registros:0,km:0};
+          stats[name].registros++;
+          stats[name].km+=km;
+        });
+      });
+      var list = Object.keys(stats).map(function(k){return stats[k];}).sort(function(a,b){return b.km-a.km;});
+      render(list);
+    }catch(e){
+      document.getElementById("list").innerHTML='<div class="err">Não consegui carregar os dados do banco.</div>';
+    }
+  }
+  load();
+})();
+</script>
+</body>
+</html>
