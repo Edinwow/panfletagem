@@ -35,6 +35,7 @@
 
   #map{position:absolute;inset:0;background:#eef0ec}
   .leaflet-container{background:#eef0ec;font-family:inherit}
+  .leaflet-container.street-near{cursor:pointer!important}
   .leaflet-control-attribution{background:rgba(255,255,255,.75)!important;color:#6b5d50!important;font-size:9px}
   .leaflet-control-attribution a{color:#8a6f56!important}
   .leaflet-bar a{background:var(--panel);color:var(--paper);border-color:var(--panel-edge)!important}
@@ -307,6 +308,16 @@
       var id=findNearestWay(e.latlng);
       if(id) toggleSelect(id);
     });
+    var hoverThrottle=0;
+    map.on("mousemove",function(e){
+      if(activeMode!=="panfletagem" || map.getZoom()<SELECT_MIN_ZOOM){ setStreetHover(false); return; }
+      var now=Date.now();
+      if(now-hoverThrottle<60) return;
+      hoverThrottle=now;
+      setStreetHover(!!findNearestWay(e.latlng));
+    });
+    map.on("mouseout",function(){ setStreetHover(false); });
+    map.on("zoomend",function(){ if(map.getZoom()<SELECT_MIN_ZOOM) setStreetHover(false); });
     fetch("vendor/rs.geojson").then(function(r){return r.json();}).then(function(rs){
       var world=[[85,-180],[85,180],[-85,180],[-85,-180]];
       var holes=rs.geometry.coordinates.map(function(poly){
@@ -414,6 +425,10 @@
       }
     });
     return best;
+  }
+
+  function setStreetHover(on){
+    map.getContainer().classList.toggle("street-near",on);
   }
 
   function toggleSelect(id){
